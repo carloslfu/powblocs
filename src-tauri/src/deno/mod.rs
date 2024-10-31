@@ -33,11 +33,18 @@ deno_runtime::deno_core::extension!(
 );
 
 pub async fn run(app_path: &Path, code: &str) -> Result<(), AnyError> {
-    let temp_code_path = Path::new(app_path).join("temp_code.ts");
+    // create temp dir
+    let temp_dir = std::env::temp_dir().join("powblocs");
+    std::fs::create_dir_all(&temp_dir).unwrap();
+
+    let temp_code_path = temp_dir.join("temp_code.ts");
+
+    println!("Writing code to {}", temp_code_path.display());
+
     std::fs::write(&temp_code_path, code).unwrap();
 
     let main_module = ModuleSpecifier::from_file_path(&temp_code_path).unwrap();
-    eprintln!("Running {main_module}...");
+    println!("Running {main_module}...");
     let fs = Arc::new(RealFs);
     let permission_desc_parser = Arc::new(RuntimePermissionDescriptorParser::new(fs.clone()));
 
