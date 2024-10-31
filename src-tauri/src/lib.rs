@@ -1,6 +1,7 @@
 use tauri::Manager;
 
 mod deno;
+mod sqlite;
 
 #[tauri::command]
 fn run_code(app_handle: tauri::AppHandle, code: &str) -> Result<(), String> {
@@ -19,11 +20,43 @@ fn run_code(app_handle: tauri::AppHandle, code: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn sqlite_query(
+    query: &str,
+    params: Vec<libsql::Value>,
+) -> Result<Vec<Vec<libsql::Value>>, String> {
+    let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+
+    runtime.block_on(async {
+        let db = sqlite::SqliteDb::instance()
+            .await
+            .map_err(|e| e.to_string())?;
+        let results = db.query(&query, params).await.map_err(|e| e.to_string())?;
+        Ok(results)
+    })
+}
+
+#[tauri::command]
+fn sqlite_execute(query: &str, params: Vec<libsql::Value>) -> Result<(), String> {
+    let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+    runtime.block_on(async {
+        let db = sqlite::SqliteDb::instance()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        db.execute(&query, params).await.map_err(|e| e.to_string())
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![run_code])
+        .invoke_handler(tauri::generate_handler![
+            run_code,
+            sqlite_query,
+            sqlite_execute
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
