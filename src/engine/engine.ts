@@ -5,6 +5,7 @@ import { Block } from "./model";
 import { generateText, LanguageModelV1 } from "ai";
 
 import { fetch } from "@tauri-apps/plugin-http";
+import { generateFunctionBlockPrompt } from "./prompts";
 
 export class PowBlocksEngine {
   private store: CodeStore;
@@ -31,16 +32,21 @@ export class PowBlocksEngine {
   async generateFunctionBlock(description: string): Promise<Block> {
     const { text } = await generateText({
       model: this.model,
-      prompt: `Generate JavaScript Code that runs on Deno that fulfills the following description:
-<description>${description}</description>
-
-Put all of the code in a single function and run it. As the final line be sure to use \`RuntimeExtension.returnValue(JSON.stringify(result))\`, where result is the value you want to return.`,
+      prompt: generateFunctionBlockPrompt(description),
     });
+
+    // extract the code from the text
+    let code = text.match(/<code>([\s\S]*?)<\/code>/)?.[1];
+
+    if (!code) {
+      code = `console.log('Error: No code generated')
+RuntimeExtension.returnValue('Error: No code generated');`;
+    }
 
     return this.store.createBlock({
       type: "function",
       description,
-      code: text,
+      code,
     });
   }
 }
