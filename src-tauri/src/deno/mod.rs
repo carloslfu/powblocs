@@ -50,7 +50,7 @@ pub async fn run(app_path: &Path, task_id: &str, code: &str) -> Result<(), AnyEr
 
     println!("Writing code to {}", temp_code_path.display());
 
-    let augmented_code = format!("globalThis.RuntimeExtension.taskId = {task_id};\n\n{code}");
+    let augmented_code = format!("globalThis.RuntimeExtension.taskId = \"{task_id}\";\n\n{code}");
 
     std::fs::write(&temp_code_path, augmented_code).unwrap();
 
