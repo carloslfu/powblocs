@@ -23,11 +23,15 @@ use module_loader::TypescriptModuleLoader;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
-static RETURN_VALUE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
+static RETURN_VALUES: Lazy<Mutex<HashMap<String, String>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 #[op2(fast)]
-fn return_value(#[string] value: &str) {
-    *RETURN_VALUE.lock().unwrap() = value.to_string();
+fn return_value(#[string] task_id: &str, #[string] value: &str) {
+    RETURN_VALUES
+        .lock()
+        .unwrap()
+        .insert(task_id.to_string(), value.to_string());
 }
 
 deno_runtime::deno_core::extension!(
@@ -37,7 +41,7 @@ deno_runtime::deno_core::extension!(
   esm = [dir "src/deno", "bootstrap.js"]
 );
 
-pub async fn run(app_path: &Path, code: &str) -> Result<(), AnyError> {
+pub async fn run(app_path: &Path, task_id: &str, code: &str) -> Result<(), AnyError> {
     // create temp dir
     let temp_dir = std::env::temp_dir().join("powblocs");
     std::fs::create_dir_all(&temp_dir).unwrap();
@@ -46,7 +50,9 @@ pub async fn run(app_path: &Path, code: &str) -> Result<(), AnyError> {
 
     println!("Writing code to {}", temp_code_path.display());
 
-    std::fs::write(&temp_code_path, code).unwrap();
+    let augmented_code = format!("globalThis.RuntimeExtension.taskId = {task_id};\n\n{code}");
+
+    std::fs::write(&temp_code_path, augmented_code).unwrap();
 
     let main_module = ModuleSpecifier::from_file_path(&temp_code_path).unwrap();
     println!("Running {main_module}...");
@@ -89,6 +95,15 @@ pub async fn run(app_path: &Path, code: &str) -> Result<(), AnyError> {
     Ok(())
 }
 
-pub fn get_return_value() -> String {
-    RETURN_VALUE.lock().unwrap().clone()
+pub fn get_return_value(task_id: &str) -> String {
+    RETURN_VALUES
+        .lock()
+        .unwrap()
+        .get(task_id)
+        .cloned()
+        .unwrap_or_default()
+}
+
+pub fn clear_return_value(task_id: &str) {
+    RETURN_VALUES.lock().unwrap().remove(task_id);
 }

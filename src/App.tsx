@@ -48,7 +48,9 @@ function App() {
     }
 
     try {
-      const result = await invoke("run_code", { code });
+      await invoke("run_code", { code });
+
+      const result = await invoke("get_return_value");
 
       let parsedResult: string;
       try {

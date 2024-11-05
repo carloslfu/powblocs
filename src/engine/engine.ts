@@ -1,4 +1,4 @@
-import { anthropic, createAnthropic } from "@ai-sdk/anthropic";
+import { createAnthropic } from "@ai-sdk/anthropic";
 
 import { APIKeys, CodeStore } from "./model";
 import { Block } from "./model";
@@ -19,7 +19,6 @@ export class PowBlocksEngine {
       apiKey: apiKeys.ANTHROPIC_API_KEY,
       headers: {
         "anthropic-dangerous-direct-browser-access": "true",
-        "anthropic-beta": "computer-use-2024-10-22",
       },
       fetch: async (input, init) => {
         return fetch(input, init);
@@ -32,6 +31,8 @@ export class PowBlocksEngine {
   async generateFunctionBlock(description: string): Promise<Block> {
     const { text } = await generateText({
       model: this.model,
+      temperature: 0,
+      maxTokens: 8192,
       prompt: generateFunctionBlockPrompt(description),
     });
 
