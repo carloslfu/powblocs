@@ -32,7 +32,7 @@ fn run_code(app_handle: tauri::AppHandle, task_id: &str, code: &str) -> Result<(
             let _ = deno::run(&app_path, &task_id_clone, &code).await;
         });
 
-        Ok::<_, String>(())
+        Ok(())
     });
 
     // Store the handle
