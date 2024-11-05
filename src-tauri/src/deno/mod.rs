@@ -89,8 +89,23 @@ pub async fn run(app_path: &Path, task_id: &str, code: &str) -> Result<(), AnyEr
             ..Default::default()
         },
     );
-    worker.execute_main_module(&main_module).await?;
-    worker.run_event_loop(false).await?;
+
+    let result = worker.execute_main_module(&main_module).await;
+    if let Err(e) = result {
+        RETURN_VALUES
+            .lock()
+            .unwrap()
+            .insert(task_id.to_string(), e.to_string());
+    }
+
+    let result = worker.run_event_loop(false).await;
+
+    if let Err(e) = result {
+        RETURN_VALUES
+            .lock()
+            .unwrap()
+            .insert(task_id.to_string(), e.to_string());
+    }
 
     Ok(())
 }
