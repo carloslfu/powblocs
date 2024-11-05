@@ -13,6 +13,7 @@ use deno_runtime::deno_core::error::AnyError;
 use deno_runtime::deno_core::op2;
 use deno_runtime::deno_core::ModuleSpecifier;
 use deno_runtime::deno_fs::RealFs;
+use deno_runtime::deno_permissions::Permissions;
 use deno_runtime::deno_permissions::PermissionsContainer;
 use deno_runtime::permissions::RuntimePermissionDescriptorParser;
 use deno_runtime::worker::MainWorker;
@@ -50,6 +51,9 @@ pub async fn run(app_path: &Path, code: &str) -> Result<(), AnyError> {
 
     let source_map_store = Rc::new(RefCell::new(HashMap::new()));
 
+    let permission_container =
+        PermissionsContainer::new(permission_desc_parser, Permissions::allow_all());
+
     let mut worker = MainWorker::bootstrap_from_options(
         main_module.clone(),
         WorkerServiceOptions {
@@ -58,7 +62,7 @@ pub async fn run(app_path: &Path, code: &str) -> Result<(), AnyError> {
             }),
             // File only loader
             // module_loader: Rc::new(FsModuleLoader),
-            permissions: PermissionsContainer::allow_all(permission_desc_parser),
+            permissions: permission_container,
             blob_store: Default::default(),
             broadcast_channel: Default::default(),
             feature_checker: Default::default(),
