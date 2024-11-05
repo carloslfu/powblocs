@@ -49,8 +49,16 @@ function App() {
 
     try {
       const result = await invoke("run_code", { code });
-      console.log("result", result);
-      setResult(result as string);
+
+      let parsedResult: string;
+      try {
+        parsedResult = JSON.parse(result as string);
+      } catch (error) {
+        parsedResult = result as string;
+      }
+
+      setResult(parsedResult);
+      console.log("result", parsedResult);
     } catch (error) {
       console.error("Failed to run code:", error);
       setResult(`Error: ${error}`);
