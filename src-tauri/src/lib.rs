@@ -12,7 +12,11 @@ fn run_code(app_handle: tauri::AppHandle, code: &str) -> Result<String, String> 
 
     let app_path = app_path.clone();
     let code = code.to_string();
-    let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| e.to_string())?;
+
     runtime.block_on(async {
         let _ = deno::run(&app_path, &code).await;
     });
