@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
@@ -13,6 +13,7 @@ function App() {
   const [result, setResult] = useState<string | null>(null);
   const [claudeKey, setClaudeKey] = useState<string>("");
   const [engine, setEngine] = useState<PowBlocksEngine | null>(null);
+  const [description, setDescription] = useState<string>("");
 
   useEffect(() => {
     // Load initial Claude API key
@@ -56,6 +57,21 @@ function App() {
     }
   };
 
+  const handleGenerateCode = async () => {
+    if (!engine) {
+      setResult("Error: Please set Claude API key first");
+      return;
+    }
+
+    try {
+      const block = await engine.generateFunctionBlock(description);
+      setCode(block.code);
+    } catch (error) {
+      console.error("Failed to generate code:", error);
+      setResult(`Error: ${error}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white rounded-lg shadow-sm border border-gray-200">
@@ -70,6 +86,23 @@ function App() {
         />
 
         <div className="p-4">
+          <div className="mb-4">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe the code you want to generate..."
+              className="w-full p-2 border rounded-md"
+              rows={3}
+            />
+            <button
+              onClick={handleGenerateCode}
+              className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              disabled={!engine || !description}
+            >
+              Generate Code
+            </button>
+          </div>
+
           <CodeMirror
             value={code}
             height="200px"
