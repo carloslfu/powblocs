@@ -20,16 +20,20 @@ use deno_runtime::worker::MainWorker;
 use deno_runtime::worker::WorkerOptions;
 use deno_runtime::worker::WorkerServiceOptions;
 use module_loader::TypescriptModuleLoader;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+
+static RETURN_VALUE: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
 
 #[op2(fast)]
-fn op_hello(#[string] text: &str) {
-    println!("Hello {} from an op!", text);
+fn return_value(#[string] value: &str) {
+    *RETURN_VALUE.lock().unwrap() = value.to_string();
 }
 
 deno_runtime::deno_core::extension!(
-  hello_runtime,
-  ops = [op_hello],
-  esm_entry_point = "ext:hello_runtime/bootstrap.js",
+  runtime_extension,
+  ops = [return_value],
+  esm_entry_point = "ext:runtime_extension/bootstrap.js",
   esm = [dir "src/deno", "bootstrap.js"]
 );
 
@@ -75,7 +79,7 @@ pub async fn run(app_path: &Path, code: &str) -> Result<(), AnyError> {
             fs,
         },
         WorkerOptions {
-            extensions: vec![hello_runtime::init_ops_and_esm()],
+            extensions: vec![runtime_extension::init_ops_and_esm()],
             ..Default::default()
         },
     );
@@ -83,4 +87,8 @@ pub async fn run(app_path: &Path, code: &str) -> Result<(), AnyError> {
     worker.run_event_loop(false).await?;
 
     Ok(())
+}
+
+pub fn get_return_value() -> String {
+    RETURN_VALUE.lock().unwrap().clone()
 }

@@ -5649,6 +5649,7 @@ dependencies = [
  "deno_fs",
  "deno_runtime",
  "libsql",
+ "once_cell",
  "serde",
  "serde_json",
  "tauri",

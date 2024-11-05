@@ -4,7 +4,7 @@ mod deno;
 mod sqlite;
 
 #[tauri::command]
-fn run_code(app_handle: tauri::AppHandle, code: &str) -> Result<(), String> {
+fn run_code(app_handle: tauri::AppHandle, code: &str) -> Result<String, String> {
     let app_path = app_handle
         .path()
         .app_data_dir()
@@ -17,7 +17,11 @@ fn run_code(app_handle: tauri::AppHandle, code: &str) -> Result<(), String> {
         let _ = deno::run(&app_path, &code).await;
     });
 
-    Ok(())
+    let return_value = deno::get_return_value();
+
+    println!("Return value: {}", return_value);
+
+    Ok(return_value)
 }
 
 #[tauri::command]
