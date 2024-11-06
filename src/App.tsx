@@ -24,6 +24,7 @@ function App() {
   const [description, setDescription] = useState<string>("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isPolling, setIsPolling] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     // Load initial Claude API key
@@ -161,11 +162,14 @@ function App() {
     }
 
     try {
+      setIsGenerating(true);
       const block = await engine.generateFunctionBlock(description);
       setCode(block.code);
     } catch (error) {
       console.error("Failed to generate code:", error);
       setResult(`Error: ${error}`);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -193,10 +197,17 @@ function App() {
             />
             <button
               onClick={handleGenerateCode}
-              className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-              disabled={!engine || !description}
+              className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:bg-green-300 disabled:cursor-not-allowed"
+              disabled={!engine || !description || isGenerating}
             >
-              Generate Code
+              {isGenerating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <FaSpinner className="animate-spin" />
+                  Generating...
+                </span>
+              ) : (
+                "Generate Code"
+              )}
             </button>
           </div>
 
