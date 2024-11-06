@@ -10,6 +10,10 @@ mod sqlite;
 static THREAD_HANDLES: Lazy<Mutex<HashMap<String, std::thread::JoinHandle<Result<(), String>>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
+// shutdown channel map
+static SHUTDOWN_CHANNELS: Lazy<Mutex<HashMap<String, tokio::sync::oneshot::Sender<()>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+
 #[tauri::command]
 fn run_code(app_handle: tauri::AppHandle, task_id: &str, code: &str) -> Result<(), String> {
     let app_path = app_handle
@@ -22,16 +26,34 @@ fn run_code(app_handle: tauri::AppHandle, task_id: &str, code: &str) -> Result<(
 
     let task_id = task_id.to_string();
     let task_id_clone = task_id.clone();
+
+    let (stop_tx, stop_rx) = tokio::sync::oneshot::channel();
+
+    SHUTDOWN_CHANNELS
+        .lock()
+        .unwrap()
+        .insert(task_id.clone(), stop_tx);
+
     let handle = std::thread::spawn(move || {
+        println!("Starting runtime");
+
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .map_err(|e| e.to_string())?;
 
-        runtime.block_on(async {
-            let _ = deno::run(&app_path, &task_id_clone, &code).await;
+        println!("Starting async task");
+
+        let task = runtime.block_on(async {
+            tokio::select! {
+                _ = deno::run(&app_path, &task_id_clone, &code) => {},
+                _ = stop_rx => {
+                    println!("Task cancelled");
+                }
+            }
         });
 
+        println!("Runtime shutdown");
         Ok(())
     });
 
@@ -53,6 +75,15 @@ fn stop_code(task_id: String) -> Result<(), String> {
 
         // Attempt to stop the thread
         std::thread::spawn(move || {
+            // send shutdown message
+            SHUTDOWN_CHANNELS
+                .lock()
+                .unwrap()
+                .remove(&task_id)
+                .unwrap()
+                .send(())
+                .map_err(|_| "Failed to send shutdown signal".to_string())?;
+
             // Wait for thread to complete
             match handle.join() {
                 Ok(_) => Ok(()),
