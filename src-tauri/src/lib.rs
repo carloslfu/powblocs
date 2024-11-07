@@ -54,6 +54,11 @@ fn run_code(app_handle: tauri::AppHandle, task_id: &str, code: &str) -> Result<(
         });
 
         println!("Runtime shutdown");
+
+        // clean up
+        SHUTDOWN_CHANNELS.lock().unwrap().remove(&task_id_clone);
+        THREAD_HANDLES.lock().unwrap().remove(&task_id_clone);
+
         Ok(())
     });
 
