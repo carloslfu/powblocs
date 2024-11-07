@@ -1,16 +1,16 @@
-import { Block, CodeStore } from "./model";
-
 import { nanoid } from "@/lib/nanoid";
+import { Block, CodeStore } from "./model";
+import { load } from "@tauri-apps/plugin-store";
 
-export class MemoryCodeStore implements CodeStore {
-  private blocks: Block[] = [];
+const store = await load("engine.json", { autoSave: false });
 
+export class LocalEngineStore implements CodeStore {
   async listBlocks(): Promise<Block[]> {
-    return this.blocks;
+    return await store.values<Block>();
   }
 
   async getBlock(id: string): Promise<Block | undefined> {
-    return this.blocks.find((block) => block.id === id);
+    return await store.get<Block>(id);
   }
 
   async createBlock(block: Omit<Block, "id">): Promise<Block> {
@@ -19,7 +19,8 @@ export class MemoryCodeStore implements CodeStore {
       ...block,
     };
 
-    this.blocks.push(newBlock);
+    await store.set(newBlock.id, newBlock);
+    await store.save();
 
     return newBlock;
   }
@@ -28,12 +29,12 @@ export class MemoryCodeStore implements CodeStore {
     id: string,
     block: Omit<Partial<Block>, "id">
   ): Promise<void> {
-    this.blocks = this.blocks.map((b) =>
-      b.id === id ? { ...b, ...block } : b
-    );
+    await store.set(id, block);
+    await store.save();
   }
 
   async deleteBlock(id: string): Promise<void> {
-    this.blocks = this.blocks.filter((block) => block.id !== id);
+    await store.delete(id);
+    await store.save();
   }
 }

@@ -15,10 +15,11 @@ export type Block = {
 };
 
 export type CodeStore = {
-  getBlock(id: string): Block | undefined;
-  createBlock(block: Omit<Block, "id">): Block;
-  updateBlock(block: Omit<Partial<Block>, "id">): void;
-  deleteBlock(id: string): void;
+  listBlocks(): Promise<Block[]>;
+  getBlock(id: string): Promise<Block | undefined>;
+  createBlock(block: Omit<Block, "id">): Promise<Block>;
+  updateBlock(id: string, block: Omit<Partial<Block>, "id">): Promise<void>;
+  deleteBlock(id: string): Promise<void>;
 };
 
 export type APIKeys = {
