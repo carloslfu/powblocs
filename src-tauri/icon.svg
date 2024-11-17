@@ -1,0 +1,198 @@
+<svg
+    width="200"
+    height="200"
+    viewBox="0 0 200 200"
+    xmlns="http://www.w3.org/2000/svg"
+>
+    <defs>
+    <!-- App Icon Gradients -->
+    <linearGradient id="appBackground" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color: #f8fdff; stop-opacity: 1" />
+        <stop offset="100%" style="stop-color: #f0f9ff; stop-opacity: 1" />
+    </linearGradient>
+
+    <!-- Block Gradients -->
+    <linearGradient id="blockGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color: #4a90e2; stop-opacity: 1" />
+        <stop offset="100%" style="stop-color: #357abd; stop-opacity: 1" />
+    </linearGradient>
+    <linearGradient id="blockGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color: #2d3be3; stop-opacity: 1" />
+        <stop offset="100%" style="stop-color: #1a2bb0; stop-opacity: 1" />
+    </linearGradient>
+    <linearGradient id="blockGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color: #1c2687; stop-opacity: 1" />
+        <stop offset="100%" style="stop-color: #111a5e; stop-opacity: 1" />
+    </linearGradient>
+
+    <!-- Icon Shadow -->
+    <filter id="iconShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="2" stdDeviation="5" flood-opacity="0.2" />
+    </filter>
+
+    <!-- Block Shadow -->
+    <filter id="blockShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="1" dy="1" stdDeviation="2" flood-opacity="0.2" />
+    </filter>
+
+    <!-- Subtle Surface Gradient -->
+    <linearGradient id="surfaceSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color: #ffffff; stop-opacity: 0.8" />
+        <stop offset="100%" style="stop-color: #f8f8f8; stop-opacity: 0.3" />
+    </linearGradient>
+    </defs>
+
+    <!-- App Icon Background -->
+    <g filter="url(#iconShadow)">
+    <!-- Main Background -->
+    <rect
+        x="20"
+        y="20"
+        width="160"
+        height="160"
+        rx="39"
+        fill="url(#appBackground)"
+    />
+
+    <!-- Subtle Surface Gradient -->
+    <rect
+        x="20"
+        y="20"
+        width="160"
+        height="160"
+        rx="39"
+        fill="url(#surfaceSheen)"
+    />
+    </g>
+
+    <!-- Main Composition -->
+    <g transform="translate(15, 10) scale(1)">
+    <!-- Block Stack -->
+    <g class="block-stack" filter="url(#blockShadow)">
+        <!-- Block 1 -->
+        <g class="block" transform="rotate(-15 80 60)">
+        <rect
+            x="20"
+            y="40"
+            width="60"
+            height="40"
+            fill="url(#blockGradient1)"
+            rx="8"
+        />
+        <circle cx="35" cy="40" r="4" fill="#ffffff" />
+        <circle cx="65" cy="40" r="4" fill="#ffffff" />
+        <rect
+            x="30"
+            y="55"
+            width="40"
+            height="3"
+            fill="#ffffff"
+            opacity="0.3"
+            rx="1"
+        />
+        <rect
+            x="30"
+            y="62"
+            width="30"
+            height="3"
+            fill="#ffffff"
+            opacity="0.3"
+            rx="1"
+        />
+        </g>
+
+        <!-- Block 2 -->
+        <g class="block" transform="rotate(10 100 80)">
+        <rect
+            x="70"
+            y="60"
+            width="80"
+            height="40"
+            fill="url(#blockGradient2)"
+            rx="8"
+        />
+        <circle cx="85" cy="60" r="4" fill="#ffffff" />
+        <circle cx="105" cy="60" r="4" fill="#ffffff" />
+        <circle cx="125" cy="60" r="4" fill="#ffffff" />
+        <rect
+            x="80"
+            y="75"
+            width="60"
+            height="3"
+            fill="#ffffff"
+            opacity="0.3"
+            rx="1"
+        />
+        <rect
+            x="80"
+            y="82"
+            width="45"
+            height="3"
+            fill="#ffffff"
+            opacity="0.3"
+            rx="1"
+        />
+        </g>
+
+        <!-- Block 3 -->
+        <g class="block" transform="rotate(-5 90 100)">
+        <rect
+            x="40"
+            y="90"
+            width="70"
+            height="40"
+            fill="url(#blockGradient3)"
+            rx="8"
+        />
+        <circle cx="55" cy="90" r="4" fill="#ffffff" />
+        <circle cx="75" cy="90" r="4" fill="#ffffff" />
+        <circle cx="95" cy="90" r="4" fill="#ffffff" />
+        <rect
+            x="50"
+            y="105"
+            width="50"
+            height="3"
+            fill="#ffffff"
+            opacity="0.3"
+            rx="1"
+        />
+        <rect
+            x="50"
+            y="112"
+            width="35"
+            height="3"
+            fill="#ffffff"
+            opacity="0.3"
+            rx="1"
+        />
+        </g>
+    </g>
+    </g>
+
+    <!-- Animations -->
+    <style>
+    @keyframes float {
+        0% {
+        transform: translateY(0px) rotate(0deg);
+        }
+        50% {
+        transform: translateY(-5px) rotate(1deg);
+        }
+        100% {
+        transform: translateY(0px) rotate(0deg);
+        }
+    }
+
+    .block {
+        transition: all 0.3s ease;
+    }
+
+    .block:hover {
+        transform: scale(1.05);
+    }
+
+    .block-stack {
+        animation: float 4s ease-in-out infinite;
+    }
+    </style>
+</svg>
