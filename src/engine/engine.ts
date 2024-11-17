@@ -8,7 +8,7 @@ import { fetch } from "@tauri-apps/plugin-http";
 import { generateFunctionBlockPrompt } from "./prompts";
 
 export class PowBlocksEngine {
-  private store: CodeStore;
+  store: CodeStore;
 
   private model: LanguageModelV1;
 

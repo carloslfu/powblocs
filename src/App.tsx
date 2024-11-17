@@ -13,6 +13,7 @@ import { Block } from "./engine/model";
 interface Task {
   id: string;
   code: string;
+  description: string;
   status: "running" | "completed" | "error";
   result?: Record<string, any>;
 }
@@ -26,8 +27,8 @@ function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isPolling, setIsPolling] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [blocks, setBlocks] = useState<Block[]>([]);
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
+  const [blocks, setBlocks] = useState<Block[]>([]);
 
   useEffect(() => {
     // Load initial Claude API key
@@ -49,6 +50,11 @@ function App() {
         },
       });
       setEngine(newEngine);
+
+      // Load blocks from store
+      newEngine.store.listBlocks().then((blocks) => {
+        setBlocks(blocks);
+      });
     } else {
       setEngine(null);
     }
@@ -122,6 +128,7 @@ function App() {
     const newTask: Task = {
       id: newTaskId,
       code,
+      description,
       status: "running",
     };
 
@@ -174,7 +181,9 @@ function App() {
       setIsGenerating(true);
       const block = await engine.generateFunctionBlock(description);
       setCode(block.code);
-      setBlocks((prev) => [...prev, block]);
+      // Refresh blocks from store after generating new block
+      const blocks = await engine.store.listBlocks();
+      setBlocks(blocks);
     } catch (error) {
       console.error("Failed to generate code:", error);
       setResult({ error });
@@ -193,8 +202,10 @@ function App() {
     if (!engine) return;
 
     try {
-      await (engine as any).store.deleteBlock(blockId);
-      setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+      await engine.store.deleteBlock(blockId);
+      // Refresh blocks from store after deletion
+      const blocks = await engine.store.listBlocks();
+      setBlocks(blocks);
       if (selectedBlock?.id === blockId) {
         setSelectedBlock(null);
         setCode("");
@@ -295,7 +306,7 @@ function App() {
             {tasks.length > 0 && (
               <div className="mt-4">
                 <h2 className="text-lg font-medium text-gray-900 mb-2">
-                  Tasks:
+                  Runs:
                 </h2>
                 <div className="space-y-2">
                   {tasks.map((task) => (
@@ -303,6 +314,9 @@ function App() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-sm">{task.id}</span>
+                          <span className="text-sm text-gray-500">
+                            {task.description}
+                          </span>
                           {task.status === "running" && (
                             <>
                               <FaSpinner className="animate-spin text-blue-500" />
