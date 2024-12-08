@@ -26,6 +26,9 @@ function App() {
 
   const currentTask = DenoEngine.useTask(currentTaskId);
 
+  console.log("currentTaskId", currentTaskId);
+  console.log("currentTask", currentTask);
+
   useEffect(() => {
     // Load initial Claude API key
     getClaudeAPIKey().then((key) => {
@@ -161,9 +164,13 @@ function App() {
 
           <div className="p-4">
             <div className="mb-4">
-              <SimpleTextEditor
+              {/* <SimpleTextEditor
                 value={description}
                 onChange={(value) => setDescription(value)}
+              /> */}
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
               <button
                 onClick={handleGenerateCode}
@@ -314,6 +321,18 @@ function App() {
                         </div>
                       </div>
                     )}
+
+                  {currentTask.error ? (
+                    <div className="bg-red-50 border border-red-200 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap text-red-600">
+                      {currentTask.error}
+                    </div>
+                  ) : (
+                    currentTask.result && (
+                      <div className="bg-gray-50 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap">
+                        {JSON.stringify(currentTask.result, null, 2)}
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             )}

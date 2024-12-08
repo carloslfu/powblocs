@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "powblocs",
+        "title": "PowBlocs",
         "width": 1200,
         "height": 800
       }
