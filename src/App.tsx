@@ -8,7 +8,7 @@ import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
 import { PowBlocksEngine } from "./engine/engine";
 import { LocalEngineStore } from "./engine/localEngineStore";
 import { Block } from "./engine/model";
-import { SimpleTextEditor } from "./components/SimpleTextEditor";
+import { SimpleTextEditor } from "./components/SimpleTextEditor/index";
 
 import * as DenoEngine from "@/engine/deno";
 
@@ -164,14 +164,14 @@ function App() {
 
           <div className="p-4">
             <div className="mb-4">
-              {/* <SimpleTextEditor
+              <SimpleTextEditor
                 value={description}
                 onChange={(value) => setDescription(value)}
-              /> */}
-              <textarea
+              />
+              {/* <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-              />
+              /> */}
               <button
                 onClick={handleGenerateCode}
                 className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:bg-green-300 disabled:cursor-not-allowed"
