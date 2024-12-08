@@ -1,22 +1,16 @@
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
-import { FaEdit, FaSpinner, FaStop, FaTrash } from "react-icons/fa";
+import { FaEdit, FaPlay, FaSpinner, FaStop, FaTrash } from "react-icons/fa";
+import { LuAlertTriangle, LuBan } from "react-icons/lu";
 
 import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
 import { PowBlocksEngine } from "./engine/engine";
-import { nanoid } from "./lib/nanoid";
 import { LocalEngineStore } from "./engine/localEngineStore";
 import { Block } from "./engine/model";
+import { SimpleTextEditor } from "./components/SimpleTextEditor";
 
-interface Task {
-  id: string;
-  code: string;
-  description: string;
-  status: "running" | "completed" | "error";
-  result?: Record<string, any>;
-}
+import * as DenoEngine from "@/engine/deno";
 
 function App() {
   const [code, setCode] = useState("");
@@ -24,11 +18,13 @@ function App() {
   const [claudeKey, setClaudeKey] = useState<string>("");
   const [engine, setEngine] = useState<PowBlocksEngine | null>(null);
   const [description, setDescription] = useState<string>("");
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isPolling, setIsPolling] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
+
+  const [currentTaskId, setCurrentTaskId] = useState<string | undefined>();
+
+  const currentTask = DenoEngine.useTask(currentTaskId);
 
   useEffect(() => {
     // Load initial Claude API key
@@ -60,115 +56,14 @@ function App() {
     }
   }, [claudeKey]);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isPolling) {
-      interval = setInterval(async () => {
-        const runningTasks = tasks.filter((t) => t.status === "running");
-
-        for (const task of runningTasks) {
-          try {
-            const result = await invoke("get_return_value", {
-              taskId: task.id,
-            });
-
-            let parsedResult: Record<string, any>;
-            try {
-              parsedResult = JSON.parse(result as string);
-            } catch (error) {
-              parsedResult = {
-                error,
-                result,
-              };
-            }
-
-            setTasks((prev) =>
-              prev.map((t) =>
-                t.id === task.id
-                  ? { ...t, status: "completed", result: parsedResult }
-                  : t
-              )
-            );
-
-            if (task.id === tasks[tasks.length - 1]?.id) {
-              setResult(parsedResult);
-            }
-          } catch (error) {
-            if ((error as string) !== "Task still running") {
-              setTasks((prev) =>
-                prev.map((t) =>
-                  t.id === task.id
-                    ? { ...t, status: "error", result: { error } }
-                    : t
-                )
-              );
-            } else {
-              console.log("Task still running");
-            }
-          }
-        }
-
-        if (runningTasks.length === 0) {
-          setIsPolling(false);
-        }
-      }, 1000);
-    }
-
-    return () => clearInterval(interval);
-  }, [isPolling, tasks]);
-
   const handleRunCode = async () => {
     if (!engine) {
       setResult({ error: "Please set Claude API key first" });
       return;
     }
 
-    const newTaskId = nanoid();
-    const newTask: Task = {
-      id: newTaskId,
-      code,
-      description,
-      status: "running",
-    };
-
-    try {
-      setTasks((prev) => [...prev, newTask]);
-      setIsPolling(true);
-
-      await invoke("run_code", {
-        taskId: newTaskId,
-        code,
-      });
-    } catch (error) {
-      console.error("Failed to run code:", error);
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === newTaskId
-            ? { ...t, status: "error", result: { error, result } }
-            : t
-        )
-      );
-    }
-  };
-
-  const handleStopTask = async (taskId: string) => {
-    try {
-      await invoke("stop_code", { taskId });
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId
-            ? {
-                ...t,
-                status: "completed",
-                result: { cancelled: true, message: "Task cancelled" },
-              }
-            : t
-        )
-      );
-    } catch (error) {
-      console.error("Failed to stop task:", error);
-    }
+    const taskId = await DenoEngine.runCode(code);
+    setCurrentTaskId(taskId);
   };
 
   const handleGenerateCode = async () => {
@@ -266,12 +161,9 @@ function App() {
 
           <div className="p-4">
             <div className="mb-4">
-              <textarea
+              <SimpleTextEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the code you want to generate..."
-                className="w-full p-2 border rounded-md"
-                rows={3}
+                onChange={(value) => setDescription(value)}
               />
               <button
                 onClick={handleGenerateCode}
@@ -303,63 +195,126 @@ function App() {
               {engine ? "Run Code" : "Set Claude API Key to Run Code"}
             </button>
 
-            {tasks.length > 0 && (
+            {currentTask && (
               <div className="mt-4">
-                <h2 className="text-lg font-medium text-gray-900 mb-2">
-                  Runs:
-                </h2>
-                <div className="space-y-2">
-                  {tasks.map((task) => (
-                    <div key={task.id} className="bg-gray-50 p-3 rounded-md">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm">{task.id}</span>
-                          <span className="text-sm text-gray-500">
-                            {task.description}
+                <div key={currentTask.id} className="bg-gray-50 p-3 rounded-md">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm">
+                        {currentTask.id}
+                      </span>
+                      {currentTask.state === "running" && (
+                        <>
+                          <FaSpinner className="animate-spin text-blue-500" />
+                          <button
+                            onClick={() => DenoEngine.stopTask(currentTask.id)}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            <FaStop />
+                          </button>
+                        </>
+                      )}
+                      {currentTask.state === "stopping" && (
+                        <>
+                          <FaSpinner className="animate-spin text-yellow-500" />
+                          <span className="text-yellow-500 text-sm">
+                            Stopping...
                           </span>
-                          {task.status === "running" && (
-                            <>
-                              <FaSpinner className="animate-spin text-blue-500" />
-                              <button
-                                onClick={() => handleStopTask(task.id)}
-                                className="text-red-500 hover:text-red-600"
-                              >
-                                <FaStop />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                        <span
-                          className={`text-sm ${
-                            task.status === "completed"
-                              ? "text-green-500"
-                              : task.status === "error"
-                              ? "text-red-500"
-                              : "text-blue-500"
-                          }`}
+                        </>
+                      )}
+                      {![
+                        "running",
+                        "stopping",
+                        "waiting_for_permission",
+                      ].includes(currentTask.state) && (
+                        <button
+                          onClick={() => DenoEngine.replayTask(currentTask.id)}
+                          className="text-green-500 hover:text-green-600"
+                          title="Replay this task"
                         >
-                          {task.status}
-                        </span>
-                      </div>
-                      {task.result && (
-                        <pre className="font-mono text-sm overflow-auto max-h-32 whitespace-pre-wrap">
-                          {JSON.stringify(task.result, null, 2)}
-                        </pre>
+                          <FaPlay />
+                        </button>
                       )}
                     </div>
-                  ))}
+                    <span
+                      className={`text-sm ${
+                        currentTask.state === "completed"
+                          ? "text-green-500"
+                          : currentTask.state === "error"
+                          ? "text-red-500"
+                          : currentTask.state === "stopped"
+                          ? "text-yellow-500"
+                          : currentTask.state === "stopping"
+                          ? "text-yellow-500"
+                          : currentTask.state === "waiting_for_permission"
+                          ? "text-orange-500"
+                          : "text-blue-500"
+                      }`}
+                    >
+                      {currentTask.state}
+                    </span>
+                  </div>
+                  {currentTask.state === "waiting_for_permission" &&
+                    currentTask.permissionPrompt && (
+                      <div className="mb-3 bg-orange-50 border border-orange-200 p-3 rounded-md">
+                        <p className="text-sm text-orange-700 mb-2">
+                          {currentTask.permissionPrompt.message}
+                        </p>
+                        <div className="text-sm text-orange-700 mb-2">
+                          <div>Name: {currentTask.permissionPrompt.name}</div>
+                          <div>
+                            API: {currentTask.permissionPrompt.api_name}
+                          </div>
+                          <div>
+                            Unary:{" "}
+                            {currentTask.permissionPrompt.is_unary
+                              ? "Yes"
+                              : "No"}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() =>
+                              DenoEngine.respondToPermissionPrompt(
+                                currentTask.id,
+                                "Allow"
+                              )
+                            }
+                            className="bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded inline-flex items-center gap-1"
+                          >
+                            <FaPlay className="text-xs" />
+                            Allow
+                          </button>
+                          <button
+                            onClick={() =>
+                              DenoEngine.respondToPermissionPrompt(
+                                currentTask.id,
+                                "Deny"
+                              )
+                            }
+                            className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
+                          >
+                            <LuBan className="text-xs" />
+                            Deny
+                          </button>
+                          {currentTask.permissionPrompt.is_unary && (
+                            <button
+                              onClick={() =>
+                                DenoEngine.respondToPermissionPrompt(
+                                  currentTask.id,
+                                  "AllowAll"
+                                )
+                              }
+                              className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
+                            >
+                              <FaPlay className="text-xs" />
+                              Allow All
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                 </div>
-              </div>
-            )}
-
-            {result !== null && (
-              <div className="mt-4">
-                <h2 className="text-lg font-medium text-gray-900 mb-2">
-                  Latest Result:
-                </h2>
-                <pre className="bg-gray-50 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap">
-                  {JSON.stringify(result, null, 2)}
-                </pre>
               </div>
             )}
           </div>
