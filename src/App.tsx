@@ -61,18 +61,12 @@ function App() {
   }, [claudeKey]);
 
   const handleRunCode = async () => {
-    if (!engine) {
-      setResult({ error: "Please set Claude API key first" });
-      return;
-    }
-
     const taskId = await DenoEngine.runCode(code);
     setCurrentTaskId(taskId);
   };
 
   const handleGenerateCode = async () => {
     if (!engine) {
-      setResult({ error: "Please set Claude API key first" });
       return;
     }
 
@@ -85,7 +79,6 @@ function App() {
       setBlocks(blocks);
     } catch (error) {
       console.error("Failed to generate code:", error);
-      setResult({ error });
     } finally {
       setIsGenerating(false);
     }
