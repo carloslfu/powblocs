@@ -9,9 +9,9 @@ import TextStyle from "@tiptap/extension-text-style";
 import "./styles.css";
 
 type TextEditorProps = {
-  initialValue?: JSONContent;
   onChange: (value: JSONContent) => void;
-  onEditorReady?: (editor: Editor) => void;
+  onEditorReady: (editor: Editor) => void;
+  initialContent?: JSONContent;
 };
 
 export const textEditorExtensions = [
@@ -30,23 +30,20 @@ export const textEditorExtensions = [
 ];
 
 export function TextEditor({
-  initialValue,
   onChange,
   onEditorReady,
+  initialContent,
 }: TextEditorProps) {
   const editor = useEditor({
     extensions: textEditorExtensions,
-    content: initialValue ?? {
-      type: "doc",
-      content: [{ type: "paragraph", content: [{ type: "text", text: "" }] }],
-    },
+    content: initialContent,
     onUpdate: ({ editor }) => {
       onChange(editor.getJSON());
     },
   });
 
   useEffect(() => {
-    if (editor && onEditorReady) {
+    if (editor) {
       onEditorReady(editor);
     }
   }, [editor, onEditorReady]);

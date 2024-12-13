@@ -1,19 +1,25 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { generateHTML, JSONContent } from "@tiptap/react";
+import { textEditorExtensions } from "@/components/TextEditor";
+import { generateText, LanguageModelV1 } from "ai";
+import { fetch } from "@tauri-apps/plugin-http";
+import TurndownService from "turndown";
 
 import { APIKeys, CodeStore } from "./model";
 import { Block } from "./model";
-import { generateText, LanguageModelV1 } from "ai";
-
-import { fetch } from "@tauri-apps/plugin-http";
 import { generateFunctionBlockPrompt } from "./prompts";
 
 export class PowBlocksEngine {
   store: CodeStore;
 
+  turndownService = new TurndownService();
+
   private model: LanguageModelV1;
 
   constructor({ store, apiKeys }: { store: CodeStore; apiKeys: APIKeys }) {
     this.store = store;
+
+    this.turndownService = new TurndownService();
 
     const anthropic = createAnthropic({
       apiKey: apiKeys.ANTHROPIC_API_KEY,
@@ -28,12 +34,16 @@ export class PowBlocksEngine {
     this.model = anthropic("claude-3-5-sonnet-20241022");
   }
 
-  async generateFunctionBlock(description: string): Promise<Block> {
+  async generateFunctionBlock(description: JSONContent): Promise<Block> {
+    const htmlContent = generateHTML(description, textEditorExtensions);
+
+    const markdownContent = this.turndownService.turndown(htmlContent);
+
     const { text } = await generateText({
       model: this.model,
       temperature: 0,
       maxTokens: 8192,
-      prompt: generateFunctionBlockPrompt(description),
+      prompt: generateFunctionBlockPrompt(markdownContent),
     });
 
     // extract the code from the text

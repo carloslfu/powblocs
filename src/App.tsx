@@ -4,7 +4,6 @@ import { javascript } from "@codemirror/lang-javascript";
 import { FaEdit, FaPlay, FaSpinner, FaStop, FaTrash } from "react-icons/fa";
 import { LuBan } from "react-icons/lu";
 import { Editor, generateHTML, JSONContent } from "@tiptap/react";
-import TurndownService from "turndown";
 
 import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
 import { PowBlocksEngine } from "./engine/engine";
@@ -17,8 +16,6 @@ import {
 
 import * as DenoEngine from "@/engine/deno";
 import { Button } from "./components/ui/button";
-
-const turndownService = new TurndownService();
 
 function App() {
   const [code, setCode] = useState("");
@@ -80,12 +77,7 @@ function App() {
 
     try {
       setIsGenerating(true);
-
-      const markdown = turndownService.turndown(
-        generateHTML(description, textEditorExtensions)
-      );
-
-      const block = await engine.generateFunctionBlock(markdown);
+      const block = await engine.generateFunctionBlock(description);
       setCode(block.code);
       // Refresh blocks from store after generating new block
       const blocks = await engine.store.listBlocks();
@@ -100,8 +92,41 @@ function App() {
   const handleSelectBlock = (block: Block) => {
     setSelectedBlock(block);
     setCode(block.code);
-    setDescription(block.description);
+    const htmlContent = block.description;
+    if (editorRef.current) {
+      editorRef.current.commands.setContent(htmlContent);
+    }
     console.log("block.description", block.description);
+  };
+
+  const handleCodeChange = async (newCode: string) => {
+    setCode(newCode);
+
+    if (engine && selectedBlock) {
+      const updatedBlock = {
+        ...selectedBlock,
+        code: newCode,
+      };
+      await engine.store.updateBlock(updatedBlock.id, updatedBlock);
+
+      const blocks = await engine.store.listBlocks();
+      setBlocks(blocks);
+    }
+  };
+
+  const handleDescriptionChange = async (newDescription: JSONContent) => {
+    setDescription(newDescription);
+
+    if (engine && selectedBlock) {
+      const updatedBlock = {
+        ...selectedBlock,
+        description: newDescription,
+      };
+      await engine.store.updateBlock(updatedBlock.id, updatedBlock);
+
+      const blocks = await engine.store.listBlocks();
+      setBlocks(blocks);
+    }
   };
 
   const handleDeleteBlock = async (blockId: string) => {
@@ -173,10 +198,11 @@ function App() {
           <div className="p-4">
             <div className="mb-4">
               <TextEditor
-                onChange={(value) => setDescription(value)}
+                onChange={handleDescriptionChange}
                 onEditorReady={(editor) => {
                   editorRef.current = editor;
                 }}
+                initialContent={selectedBlock?.description}
               />
               <Button
                 onClick={handleGenerateCode}
@@ -198,7 +224,7 @@ function App() {
               value={code}
               height="200px"
               extensions={[javascript({ jsx: true })]}
-              onChange={(value) => setCode(value)}
+              onChange={handleCodeChange}
             />
             <Button onClick={handleRunCode} className="mt-3" disabled={!engine}>
               {engine ? "Run Code" : "Set Claude API Key to Run Code"}
