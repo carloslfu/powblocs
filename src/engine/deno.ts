@@ -231,3 +231,13 @@ export async function respondToPermissionPrompt(
     console.error("Failed to respond to permission:", error);
   }
 }
+
+type InternalEvent = {
+  task_id: string;
+  event_name: string;
+  data: Record<string, any>;
+};
+
+await listen<InternalEvent>("event", (event) => {
+  console.log("-- event", event);
+});

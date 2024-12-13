@@ -27,6 +27,19 @@ static THREAD_HANDLES: Lazy<Mutex<HashMap<String, std::thread::JoinHandle<Result
 static SHUTDOWN_CHANNELS: Lazy<Mutex<HashMap<String, tokio::sync::oneshot::Sender<()>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
+#[derive(Debug, Clone, serde::Serialize)]
+struct Event {
+    task_id: String,
+    event_name: String,
+    data: String,
+}
+
+// events channel
+static EVENTS_CHANNEL: Lazy<(Sender<Event>, Receiver<Event>)> = Lazy::new(|| {
+    let (tx, rx) = unbounded();
+    (tx, rx)
+});
+
 pub fn run_task(task_id: &str, code: &str) -> Result<(), String> {
     let code = code.to_string();
 
@@ -244,6 +257,17 @@ pub fn init_listener(app_handle: AppHandle) {
             let result = app_handle_clone.emit("task-state-changed", task);
             if result.is_err() {
                 println!("Failed to emit task state changed");
+            }
+        }
+    });
+
+    let app_handle_clone = app_handle.clone();
+
+    tauri::async_runtime::spawn(async move {
+        while let Ok(event) = EVENTS_CHANNEL.1.recv() {
+            let result = app_handle_clone.emit("event", event);
+            if result.is_err() {
+                println!("Failed to emit event");
             }
         }
     });

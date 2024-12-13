@@ -8,4 +8,8 @@ function documentDir() {
   return ops.custom_op_document_dir();
 }
 
-globalThis.Pow = { returnValue, documentDir };
+function send(eventName, data) {
+  ops.custom_op_send(globalThis.Pow.taskId, eventName, JSON.stringify(data));
+}
+
+globalThis.Pow = { returnValue, documentDir, send };
