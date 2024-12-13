@@ -241,9 +241,19 @@ fn custom_op_document_dir() -> Option<String> {
     dirs::document_dir().map(|path| path.to_string_lossy().to_string())
 }
 
+#[op2(fast)]
+fn custom_op_send(#[string] task_id: &str, #[string] event_name: &str, #[string] data: &str) {
+    let event = Event {
+        task_id: task_id.to_string(),
+        event_name: event_name.to_string(),
+        data: data.to_string(),
+    };
+    EVENTS_CHANNEL.0.send(event).unwrap();
+}
+
 deno_runtime::deno_core::extension!(
   pow_extension,
-  ops = [custom_op_return_value, custom_op_document_dir],
+  ops = [custom_op_return_value, custom_op_document_dir, custom_op_send],
   esm_entry_point = "ext:pow_extension/bootstrap.js",
   esm = [dir "src/deno", "bootstrap.js"]
 );
