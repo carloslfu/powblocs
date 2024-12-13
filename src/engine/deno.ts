@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -100,11 +100,19 @@ const externalTaskStore = {
 };
 
 export function useTask(id: string | undefined) {
-  return useSyncExternalStore(
+  const taskRef = useRef<Task | undefined>(undefined);
+
+  const task = useSyncExternalStore(
     externalTaskStore.subscribe(id),
     externalTaskStore.getState(id),
     externalTaskStore.getState(id)
   );
+
+  useEffect(() => {
+    taskRef.current = task;
+  }, [task]);
+
+  return { task, taskRef };
 }
 
 await listen<InternalTask>("task-state-changed", (event) => {

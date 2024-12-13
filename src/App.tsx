@@ -16,6 +16,16 @@ import * as DenoEngine from "@/engine/deno";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 
+/**
+ * Delay before showing spinner
+ */
+const SPINNER_DELAY = 300;
+
+/**
+ * Minimum time to show spinner
+ */
+const MIN_SPINNER_DURATION = 500;
+
 function App() {
   const [code, setCode] = useState("");
   const [claudeKey, setClaudeKey] = useState<string>("");
@@ -25,11 +35,15 @@ function App() {
   const [selectedBlock, setSelectedBlock] = useState<Block | undefined>();
   const [blocks, setBlocks] = useState<Block[]>([]);
 
+  const [showRunningSpinner, setShowRunningSpinner] = useState(false);
+  const spinnerTimeout = useRef<NodeJS.Timeout | null>(null);
+
   const editorRef = useRef<Editor | null>(null);
 
   const [currentTaskId, setCurrentTaskId] = useState<string | undefined>();
 
-  const currentTask = DenoEngine.useTask(currentTaskId);
+  const { task: currentTask, taskRef: currentTaskRef } =
+    DenoEngine.useTask(currentTaskId);
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -82,6 +96,26 @@ function App() {
     try {
       const taskId = await DenoEngine.runCode(code);
       setCurrentTaskId(taskId);
+
+      spinnerTimeout.current = setTimeout(() => {
+        console.log("here setTimeout called --");
+        console.log(
+          "here setTimeout called --2",
+          currentTaskRef.current?.state
+        );
+        if (
+          currentTaskRef.current &&
+          (currentTaskRef.current.state === "running" ||
+            currentTaskRef.current.state === "waiting_for_permission" ||
+            currentTaskRef.current.state === "stopping")
+        ) {
+          setShowRunningSpinner(true);
+
+          spinnerTimeout.current = setTimeout(() => {
+            setShowRunningSpinner(false);
+          }, MIN_SPINNER_DURATION);
+        }
+      }, SPINNER_DELAY);
     } catch (error) {
       console.error("Failed to run code:", error);
     }
@@ -167,6 +201,16 @@ function App() {
       console.error("Failed to delete block:", error);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (spinnerTimeout.current) {
+        clearTimeout(spinnerTimeout.current);
+      }
+    };
+  }, []);
+
+  console.log("showRunningSpinner", showRunningSpinner);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -260,14 +304,19 @@ function App() {
               className="mt-3"
               disabled={
                 !engine ||
+                showRunningSpinner ||
                 (currentTask &&
+                  showRunningSpinner &&
                   currentTask.state !== "completed" &&
                   currentTask.state !== "error" &&
                   currentTask.state !== "stopped") ||
                 !code
               }
             >
-              {currentTask && currentTask.state === "running" ? (
+              {showRunningSpinner ||
+              (currentTask &&
+                currentTask.state === "running" &&
+                showRunningSpinner) ? (
                 <span className="flex items-center justify-center gap-2">
                   <FaSpinner className="animate-spin" />
                   Running...
@@ -290,16 +339,18 @@ function App() {
                       <span className="font-mono text-sm">
                         {currentTask.id}
                       </span>
-                      {currentTask.state === "running" && (
-                        <>
+                      {(showRunningSpinner ||
+                        currentTask.state === "running") &&
+                        showRunningSpinner && (
                           <FaSpinner className="animate-spin text-blue-500" />
-                          <button
-                            onClick={() => DenoEngine.stopTask(currentTask.id)}
-                            className="text-red-500 hover:text-red-600"
-                          >
-                            <FaStop />
-                          </button>
-                        </>
+                        )}
+                      {currentTask.state === "running" && (
+                        <button
+                          onClick={() => DenoEngine.stopTask(currentTask.id)}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <FaStop />
+                        </button>
                       )}
                       {currentTask.state === "stopping" && (
                         <>
