@@ -83,7 +83,9 @@ function App() {
   const handleRunCode = async () => {
     try {
       setIsRunning(true);
+      console.log("running code");
       const taskId = await DenoEngine.runCode(code);
+      console.log("code ran", taskId);
       setCurrentTaskId(taskId);
     } catch (error) {
       console.error("Failed to run code:", error);
@@ -104,7 +106,6 @@ function App() {
         selectedBlock?.id
       );
       setCode(block.code);
-      // Refresh blocks from store after generating new block
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
 
@@ -173,8 +174,6 @@ function App() {
       console.error("Failed to delete block:", error);
     }
   };
-
-  console.log("blocks", blocks);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -266,13 +265,23 @@ function App() {
             <Button
               onClick={handleRunCode}
               className="mt-3"
-              disabled={!engine || isRunning || !code}
+              disabled={
+                !engine ||
+                (currentTask &&
+                  currentTask.state !== "completed" &&
+                  currentTask.state !== "error" &&
+                  currentTask.state !== "stopped") ||
+                !code
+              }
             >
-              {isRunning ? (
+              {currentTask && currentTask.state === "running" ? (
                 <span className="flex items-center justify-center gap-2">
                   <FaSpinner className="animate-spin" />
                   Running...
                 </span>
+              ) : currentTask &&
+                currentTask.state === "waiting_for_permission" ? (
+                "Waiting for Permission"
               ) : engine ? (
                 "Run Code"
               ) : (
