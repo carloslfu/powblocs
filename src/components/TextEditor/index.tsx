@@ -28,23 +28,20 @@ export const textEditorExtensions = [
   }),
 ];
 
-export function TextEditor({
-  value = {
-    type: "doc",
-    content: [{ type: "paragraph", content: [{ type: "text", text: "" }] }],
-  },
-  onChange,
-}: TextEditorProps) {
+export function TextEditor({ value, onChange }: TextEditorProps) {
   const editor = useEditor({
     extensions: textEditorExtensions,
-    content: value,
+    content: value ?? {
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text: "" }] }],
+    },
     onUpdate: ({ editor }) => {
       onChange(editor.getJSON());
     },
   });
 
   useEffect(() => {
-    if (editor) {
+    if (editor && value) {
       editor.commands.setContent(value, false);
     }
   }, [value]);
