@@ -169,10 +169,6 @@ function App() {
                 value={description}
                 onChange={(value) => setDescription(value)}
               />
-              {/* <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              /> */}
               <Button
                 onClick={handleGenerateCode}
                 className="mt-2"
