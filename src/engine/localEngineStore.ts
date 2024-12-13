@@ -29,7 +29,14 @@ export class LocalEngineStore implements CodeStore {
     id: string,
     block: Omit<Partial<Block>, "id">
   ): Promise<void> {
-    await store.set(id, block);
+    const currentBlock = await store.get<Block>(id);
+
+    const updatedBlock = {
+      ...currentBlock,
+      ...block,
+    };
+
+    await store.set(id, updatedBlock);
     await store.save();
   }
 
@@ -38,3 +45,5 @@ export class LocalEngineStore implements CodeStore {
     await store.save();
   }
 }
+
+(window as any).localEngineStore = new LocalEngineStore();

@@ -9,10 +9,7 @@ import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
 import { PowBlocksEngine } from "./engine/engine";
 import { LocalEngineStore } from "./engine/localEngineStore";
 import { Block } from "./engine/model";
-import {
-  TextEditor,
-  textEditorExtensions,
-} from "./components/TextEditor/index";
+import { TextEditor } from "./components/TextEditor/index";
 
 import * as DenoEngine from "@/engine/deno";
 import { Button } from "./components/ui/button";
@@ -23,7 +20,7 @@ function App() {
   const [engine, setEngine] = useState<PowBlocksEngine | null>(null);
   const [description, setDescription] = useState<JSONContent | undefined>();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
+  const [selectedBlock, setSelectedBlock] = useState<Block | undefined>();
   const [blocks, setBlocks] = useState<Block[]>([]);
 
   const editorRef = useRef<Editor | null>(null);
@@ -32,8 +29,7 @@ function App() {
 
   const currentTask = DenoEngine.useTask(currentTaskId);
 
-  console.log("currentTaskId", currentTaskId);
-  console.log("currentTask", currentTask);
+  const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
     // Load initial Claude API key
@@ -66,8 +62,15 @@ function App() {
   }, [claudeKey]);
 
   const handleRunCode = async () => {
-    const taskId = await DenoEngine.runCode(code);
-    setCurrentTaskId(taskId);
+    try {
+      setIsRunning(true);
+      const taskId = await DenoEngine.runCode(code);
+      setCurrentTaskId(taskId);
+    } catch (error) {
+      console.error("Failed to run code:", error);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const handleGenerateCode = async () => {
@@ -77,11 +80,16 @@ function App() {
 
     try {
       setIsGenerating(true);
-      const block = await engine.generateFunctionBlock(description);
+      const block = await engine.updateOrCreateBlock(
+        description,
+        selectedBlock?.id
+      );
       setCode(block.code);
       // Refresh blocks from store after generating new block
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
+
+      setSelectedBlock(block);
     } catch (error) {
       console.error("Failed to generate code:", error);
     } finally {
@@ -138,7 +146,7 @@ function App() {
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
       if (selectedBlock?.id === blockId) {
-        setSelectedBlock(null);
+        setSelectedBlock(undefined);
         setCode("");
         setDescription(undefined);
       }
@@ -147,11 +155,12 @@ function App() {
     }
   };
 
+  console.log("blocks", blocks);
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <div className="w-64 bg-white border-r border-gray-200 p-4">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Saved Blocks</h2>
         <div className="space-y-2">
           {blocks.map((block) => (
             <div
@@ -226,8 +235,21 @@ function App() {
               extensions={[javascript({ jsx: true })]}
               onChange={handleCodeChange}
             />
-            <Button onClick={handleRunCode} className="mt-3" disabled={!engine}>
-              {engine ? "Run Code" : "Set Claude API Key to Run Code"}
+            <Button
+              onClick={handleRunCode}
+              className="mt-3"
+              disabled={!engine || isRunning || !code}
+            >
+              {isRunning ? (
+                <span className="flex items-center justify-center gap-2">
+                  <FaSpinner className="animate-spin" />
+                  Running...
+                </span>
+              ) : engine ? (
+                "Run Code"
+              ) : (
+                "Set Claude API Key to Run Code"
+              )}
             </Button>
 
             {currentTask && (

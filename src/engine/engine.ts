@@ -34,29 +34,63 @@ export class PowBlocksEngine {
     this.model = anthropic("claude-3-5-sonnet-20241022");
   }
 
-  async generateFunctionBlock(description: JSONContent): Promise<Block> {
+  async updateOrCreateBlock(
+    description: JSONContent,
+    blockId?: string
+  ): Promise<Block> {
     const htmlContent = generateHTML(description, textEditorExtensions);
-
     const markdownContent = this.turndownService.turndown(htmlContent);
 
-    const { text } = await generateText({
-      model: this.model,
-      temperature: 0,
-      maxTokens: 8192,
-      prompt: generateFunctionBlockPrompt(markdownContent),
-    });
+    const [codeResponse, titleResponse] = await Promise.all([
+      generateText({
+        model: this.model,
+        temperature: 0,
+        maxTokens: 8192,
+        prompt: generateFunctionBlockPrompt(markdownContent),
+      }),
+      generateText({
+        model: this.model,
+        temperature: 0,
+        maxTokens: 100,
+        prompt: `Generate a short, descriptive title (3-5 words) for this code block based on this description:
+<description>${markdownContent}</description>
+
+Output the title only. Output it in the following format:
+<title>Title</title>`,
+      }),
+    ]);
 
     // extract the code from the text
-    let code = text.match(/<code>([\s\S]*?)<\/code>/)?.[1];
+    let code = codeResponse.text.match(/<code>([\s\S]*?)<\/code>/)?.[1];
 
     if (!code) {
       code = `console.log('Error: No code generated')
 RuntimeExtension.returnValue('Error: No code generated');`;
     }
 
+    let title = titleResponse.text.match(/<title>([\s\S]*?)<\/title>/)?.[1];
+
+    let trimmedTitle = title?.trim() || "Untitled";
+
+    if (blockId) {
+      await this.store.updateBlock(blockId, {
+        description,
+        code,
+        title: trimmedTitle,
+      });
+
+      return {
+        id: blockId,
+        description,
+        code,
+        title: trimmedTitle,
+      };
+    }
+
     return this.store.createBlock({
       description,
       code,
+      title: trimmedTitle,
     });
   }
 }
