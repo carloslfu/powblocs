@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { FaEdit, FaPlay, FaSpinner, FaStop, FaTrash } from "react-icons/fa";
 import { LuBan } from "react-icons/lu";
-import { generateHTML, JSONContent } from "@tiptap/react";
+import { Editor, generateHTML, JSONContent } from "@tiptap/react";
 import TurndownService from "turndown";
 
 import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
@@ -28,6 +28,8 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
+
+  const editorRef = useRef<Editor | null>(null);
 
   const [currentTaskId, setCurrentTaskId] = useState<string | undefined>();
 
@@ -171,8 +173,10 @@ function App() {
           <div className="p-4">
             <div className="mb-4">
               <TextEditor
-                value={description}
                 onChange={(value) => setDescription(value)}
+                onEditorReady={(editor) => {
+                  editorRef.current = editor;
+                }}
               />
               <Button
                 onClick={handleGenerateCode}

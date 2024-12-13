@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import StarterKit from "@tiptap/starter-kit";
-import { EditorContent, JSONContent, useEditor } from "@tiptap/react";
+import { Editor, EditorContent, JSONContent, useEditor } from "@tiptap/react";
 import { Color } from "@tiptap/extension-color";
 import ListItem from "@tiptap/extension-list-item";
 import TextStyle from "@tiptap/extension-text-style";
@@ -9,8 +9,9 @@ import TextStyle from "@tiptap/extension-text-style";
 import "./styles.css";
 
 type TextEditorProps = {
-  value?: JSONContent;
+  initialValue?: JSONContent;
   onChange: (value: JSONContent) => void;
+  onEditorReady?: (editor: Editor) => void;
 };
 
 export const textEditorExtensions = [
@@ -28,10 +29,14 @@ export const textEditorExtensions = [
   }),
 ];
 
-export function TextEditor({ value, onChange }: TextEditorProps) {
+export function TextEditor({
+  initialValue,
+  onChange,
+  onEditorReady,
+}: TextEditorProps) {
   const editor = useEditor({
     extensions: textEditorExtensions,
-    content: value ?? {
+    content: initialValue ?? {
       type: "doc",
       content: [{ type: "paragraph", content: [{ type: "text", text: "" }] }],
     },
@@ -41,10 +46,10 @@ export function TextEditor({ value, onChange }: TextEditorProps) {
   });
 
   useEffect(() => {
-    if (editor && value) {
-      editor.commands.setContent(value, false);
+    if (editor && onEditorReady) {
+      onEditorReady(editor);
     }
-  }, [value]);
+  }, [editor, onEditorReady]);
 
   if (!editor) {
     return null;
