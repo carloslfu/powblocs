@@ -55,7 +55,6 @@ RuntimeExtension.returnValue('Error: No code generated');`;
     }
 
     return this.store.createBlock({
-      type: "function",
       description,
       code,
     });

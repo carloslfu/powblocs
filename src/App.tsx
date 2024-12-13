@@ -165,7 +165,7 @@ function App() {
             >
               <div className="truncate flex-1">
                 <div className="text-sm font-medium">
-                  {block.description.slice(0, 30)}...
+                  {block.title || "Untitled"}
                 </div>
               </div>
               <button

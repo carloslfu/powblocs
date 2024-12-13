@@ -1,10 +1,11 @@
 import { JSONContent } from "@tiptap/react";
 
-export type BlockType = "function";
-
 export type Block = {
   id: string;
-  type: string;
+  /**
+   * The title of the block
+   */
+  title?: string;
   /**
    * Natural language description of the block
    */
