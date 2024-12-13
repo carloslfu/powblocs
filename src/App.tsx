@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { FaEdit, FaPlay, FaSpinner, FaStop, FaTrash } from "react-icons/fa";
 import { LuBan } from "react-icons/lu";
-import { Editor, generateHTML, JSONContent } from "@tiptap/react";
+import { Editor, JSONContent } from "@tiptap/react";
+import Fuse from "fuse.js";
 
 import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
 import { PowBlocksEngine } from "./engine/engine";
@@ -13,6 +14,7 @@ import { TextEditor } from "./components/TextEditor/index";
 
 import * as DenoEngine from "@/engine/deno";
 import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
 
 function App() {
   const [code, setCode] = useState("");
@@ -30,6 +32,23 @@ function App() {
   const currentTask = DenoEngine.useTask(currentTaskId);
 
   const [isRunning, setIsRunning] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fuse = useMemo(
+    () =>
+      new Fuse(blocks, {
+        keys: ["title"],
+        threshold: 0.3,
+        includeScore: true,
+      }),
+    [blocks]
+  );
+
+  const filteredBlocks = useMemo(() => {
+    if (!searchQuery) return blocks;
+    return fuse.search(searchQuery).map((result) => result.item);
+  }, [fuse, searchQuery, blocks]);
 
   useEffect(() => {
     // Load initial Claude API key
@@ -161,8 +180,17 @@ function App() {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <div className="w-64 bg-white border-r border-gray-200 p-4">
+        <div className="mb-4">
+          <Input
+            type="search"
+            placeholder="Search blocks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
         <div className="space-y-2">
-          {blocks.map((block) => (
+          {filteredBlocks.map((block) => (
             <div
               key={block.id}
               className={`p-2 rounded cursor-pointer flex justify-between items-center ${
