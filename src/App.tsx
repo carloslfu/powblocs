@@ -11,6 +11,7 @@ import { Block } from "./engine/model";
 import { SimpleTextEditor } from "./components/SimpleTextEditor/index";
 
 import * as DenoEngine from "@/engine/deno";
+import { Button } from "./components/ui/button";
 
 function App() {
   const [code, setCode] = useState("");
@@ -172,9 +173,9 @@ function App() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               /> */}
-              <button
+              <Button
                 onClick={handleGenerateCode}
-                className="mt-2 w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:bg-green-300 disabled:cursor-not-allowed"
+                className="mt-2"
                 disabled={!engine || !description || isGenerating}
               >
                 {isGenerating ? (
@@ -185,7 +186,7 @@ function App() {
                 ) : (
                   "Generate Code"
                 )}
-              </button>
+              </Button>
             </div>
 
             <CodeMirror
@@ -194,13 +195,9 @@ function App() {
               extensions={[javascript({ jsx: true })]}
               onChange={(value) => setCode(value)}
             />
-            <button
-              onClick={handleRunCode}
-              className="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
-              disabled={!engine}
-            >
+            <Button onClick={handleRunCode} className="mt-3" disabled={!engine}>
               {engine ? "Run Code" : "Set Claude API Key to Run Code"}
-            </button>
+            </Button>
 
             {currentTask && (
               <div className="mt-4">
