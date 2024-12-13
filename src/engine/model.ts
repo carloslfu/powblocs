@@ -1,3 +1,5 @@
+import { JSONContent } from "@tiptap/react";
+
 export type BlockType = "function";
 
 export type Block = {
@@ -6,7 +8,7 @@ export type Block = {
   /**
    * Natural language description of the block
    */
-  description: string;
+  description: JSONContent;
 
   /**
    * The code of the block

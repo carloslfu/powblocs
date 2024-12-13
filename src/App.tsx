@@ -2,23 +2,29 @@ import { useEffect, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { FaEdit, FaPlay, FaSpinner, FaStop, FaTrash } from "react-icons/fa";
-import { LuAlertTriangle, LuBan } from "react-icons/lu";
+import { LuBan } from "react-icons/lu";
+import { generateHTML, JSONContent } from "@tiptap/react";
+import TurndownService from "turndown";
 
 import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
 import { PowBlocksEngine } from "./engine/engine";
 import { LocalEngineStore } from "./engine/localEngineStore";
 import { Block } from "./engine/model";
-import { SimpleTextEditor } from "./components/SimpleTextEditor/index";
+import {
+  TextEditor,
+  textEditorExtensions,
+} from "./components/TextEditor/index";
 
 import * as DenoEngine from "@/engine/deno";
 import { Button } from "./components/ui/button";
 
+const turndownService = new TurndownService();
+
 function App() {
   const [code, setCode] = useState("");
-  const [result, setResult] = useState<Record<string, any> | null>(null);
   const [claudeKey, setClaudeKey] = useState<string>("");
   const [engine, setEngine] = useState<PowBlocksEngine | null>(null);
-  const [description, setDescription] = useState<string>("");
+  const [description, setDescription] = useState<JSONContent | undefined>();
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -66,13 +72,18 @@ function App() {
   };
 
   const handleGenerateCode = async () => {
-    if (!engine) {
+    if (!engine || !description) {
       return;
     }
 
     try {
       setIsGenerating(true);
-      const block = await engine.generateFunctionBlock(description);
+
+      const markdown = turndownService.turndown(
+        generateHTML(description, textEditorExtensions)
+      );
+
+      const block = await engine.generateFunctionBlock(markdown);
       setCode(block.code);
       // Refresh blocks from store after generating new block
       const blocks = await engine.store.listBlocks();
@@ -88,6 +99,7 @@ function App() {
     setSelectedBlock(block);
     setCode(block.code);
     setDescription(block.description);
+    console.log("block.description", block.description);
   };
 
   const handleDeleteBlock = async (blockId: string) => {
@@ -101,7 +113,7 @@ function App() {
       if (selectedBlock?.id === blockId) {
         setSelectedBlock(null);
         setCode("");
-        setDescription("");
+        setDescription(undefined);
       }
     } catch (error) {
       console.error("Failed to delete block:", error);
@@ -158,7 +170,7 @@ function App() {
 
           <div className="p-4">
             <div className="mb-4">
-              <SimpleTextEditor
+              <TextEditor
                 value={description}
                 onChange={(value) => setDescription(value)}
               />
