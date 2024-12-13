@@ -118,12 +118,12 @@ function App() {
 
   const handleSelectBlock = (block: Block) => {
     setSelectedBlock(block);
+    setDescription(block.description);
     setCode(block.code);
     const htmlContent = block.description;
     if (editorRef.current) {
       editorRef.current.commands.setContent(htmlContent);
     }
-    console.log("block.description", block.description);
   };
 
   const handleCodeChange = async (newCode: string) => {
