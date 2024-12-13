@@ -229,9 +229,9 @@ fn custom_op_document_dir() -> Option<String> {
 }
 
 deno_runtime::deno_core::extension!(
-  runtime_extension,
+  pow_extension,
   ops = [custom_op_return_value, custom_op_document_dir],
-  esm_entry_point = "ext:runtime_extension/bootstrap.js",
+  esm_entry_point = "ext:pow_extension/bootstrap.js",
   esm = [dir "src/deno", "bootstrap.js"]
 );
 
@@ -351,7 +351,7 @@ pub async fn run(task_id: &str, code: &str) -> Result<(), AnyError> {
 
     println!("Writing code to {}", temp_code_path.display());
 
-    let augmented_code = format!("globalThis.RuntimeExtension.taskId = \"{task_id}\";\n\n{code}");
+    let augmented_code = format!("globalThis.Pow.taskId = \"{task_id}\";\n\n{code}");
 
     std::fs::write(&temp_code_path, augmented_code).unwrap();
 
@@ -389,7 +389,7 @@ pub async fn run(task_id: &str, code: &str) -> Result<(), AnyError> {
         Task::new(task_id.to_string(), "running".to_string()),
     );
 
-    let extensions = vec![runtime_extension::init_ops_and_esm()];
+    let extensions = vec![pow_extension::init_ops_and_esm()];
 
     std::env::set_var("DENO_DIR", deno_dir.to_string_lossy().to_string());
 

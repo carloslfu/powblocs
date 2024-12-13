@@ -65,7 +65,7 @@ Output the title only. Output it in the following format:
 
     if (!code) {
       code = `console.log('Error: No code generated')
-RuntimeExtension.returnValue('Error: No code generated');`;
+Pow.returnValue('Error: No code generated');`;
     }
 
     let title = titleResponse.text.match(/<title>([\s\S]*?)<\/title>/)?.[1];
