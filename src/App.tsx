@@ -31,8 +31,6 @@ function App() {
 
   const currentTask = DenoEngine.useTask(currentTaskId);
 
-  const [isRunning, setIsRunning] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState("");
 
   const fuse = useMemo(
@@ -82,15 +80,10 @@ function App() {
 
   const handleRunCode = async () => {
     try {
-      setIsRunning(true);
-      console.log("running code");
       const taskId = await DenoEngine.runCode(code);
-      console.log("code ran", taskId);
       setCurrentTaskId(taskId);
     } catch (error) {
       console.error("Failed to run code:", error);
-    } finally {
-      setIsRunning(false);
     }
   };
 
