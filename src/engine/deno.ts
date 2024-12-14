@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -298,12 +298,12 @@ listen<InternalTaskEvent>("event", (event) => {
     data: event.payload.data,
   };
 
-  const events = taskEventsStore.get(event.payload.task_id) || [];
-  events.push(taskEvent);
-  taskEventsStore.set(event.payload.task_id, events);
+  const currentEvents = taskEventsStore.get(event.payload.task_id) || [];
+  const newEvents = [...currentEvents, taskEvent];
+  taskEventsStore.set(event.payload.task_id, newEvents);
 
   taskEventsListeners.get(event.payload.task_id)?.forEach((listener) => {
-    listener(taskEventsStore.get(event.payload.task_id) || []);
+    listener(newEvents);
   });
 });
 
@@ -311,15 +311,33 @@ export function useTaskEvents(taskId: string): {
   events: TaskEvent[];
   clearEvents: () => void;
 } {
-  const events = useSyncExternalStore(
-    taskEventsStore.subscribe(taskId),
-    taskEventsStore.getState(taskId),
-    taskEventsStore.getState(taskId)
+  // Use a ref to store the events to prevent unnecessary re-renders
+  const eventsRef = useRef<TaskEvent[]>([]);
+
+  const subscribe = useCallback(
+    (listener: (events: TaskEvent[]) => void) => {
+      const unsubscribe = taskEventsStore.subscribe(taskId)((newEvents) => {
+        eventsRef.current = newEvents;
+        listener(newEvents);
+      });
+
+      // Initialize with current events
+      eventsRef.current = taskEventsStore.get(taskId) || [];
+
+      return unsubscribe;
+    },
+    [taskId]
   );
 
-  const clearEvents = () => {
+  const getSnapshot = useCallback(() => {
+    return eventsRef.current;
+  }, []);
+
+  const events = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+  const clearEvents = useCallback(() => {
     taskEventsStore.clearEvents(taskId);
-  };
+  }, [taskId]);
 
   return { events, clearEvents };
 }

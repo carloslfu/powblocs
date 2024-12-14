@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, useMemo, useLayoutEffect } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import {
@@ -36,13 +43,17 @@ const MIN_SPINNER_DURATION = 500;
 function EventLog({ taskId }: { taskId: string }) {
   const { events, clearEvents } = DenoEngine.useTaskEvents(taskId);
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const prevEventsLengthRef = useRef(events.length);
 
-  // Auto-scroll to bottom when new events arrive
   useLayoutEffect(() => {
-    if (logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    const container = logContainerRef.current;
+    if (container && events.length > prevEventsLengthRef.current) {
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
     }
-  }, [events]);
+    prevEventsLengthRef.current = events.length;
+  }, [events.length]);
 
   return (
     <div className="mt-4 border rounded-md">
@@ -64,7 +75,7 @@ function EventLog({ taskId }: { taskId: string }) {
       >
         {events.map((event, index) => (
           <div
-            key={index}
+            key={`${taskId}-${index}`}
             className="text-sm font-mono bg-white p-2 rounded border"
           >
             <div className="flex justify-between text-xs text-gray-500 mb-1">
