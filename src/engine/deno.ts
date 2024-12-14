@@ -232,12 +232,94 @@ export async function respondToPermissionPrompt(
   }
 }
 
-type InternalEvent = {
+type InternalTaskEvent = {
   task_id: string;
   event_name: string;
   data: Record<string, any>;
 };
 
-await listen<InternalEvent>("event", (event) => {
-  console.log("-- event", event);
+export type TaskEvent = {
+  taskId: string;
+  eventName: string;
+  data: Record<string, any>;
+};
+
+const taskEventsListeners = new Map<
+  string,
+  Set<(events: TaskEvent[]) => void>
+>();
+
+const taskEventsMap = new Map<string, TaskEvent[]>();
+
+const taskEventsStore = {
+  getState(taskId: string): () => TaskEvent[] {
+    return () => taskEventsMap.get(taskId) || [];
+  },
+  get(taskId: string): TaskEvent[] {
+    return taskEventsMap.get(taskId) || [];
+  },
+  set(taskId: string, events: TaskEvent[]) {
+    taskEventsMap.set(taskId, events);
+  },
+  subscribe(
+    taskId: string
+  ): (listener: (events: TaskEvent[]) => void) => () => void {
+    return (listener: (events: TaskEvent[]) => void) => {
+      let listeners = taskEventsListeners.get(taskId);
+
+      if (!listeners) {
+        listeners = new Set();
+        taskEventsListeners.set(taskId, listeners);
+      }
+
+      listeners.add(listener);
+
+      return () => {
+        listeners?.delete(listener);
+        if (listeners?.size === 0) {
+          taskEventsListeners.delete(taskId);
+        }
+      };
+    };
+  },
+  clearEvents(taskId: string) {
+    taskEventsMap.delete(taskId);
+    // Notify listeners of the empty state
+    taskEventsListeners.get(taskId)?.forEach((listener) => {
+      listener([]);
+    });
+  },
+};
+
+listen<InternalTaskEvent>("event", (event) => {
+  const taskEvent: TaskEvent = {
+    taskId: event.payload.task_id,
+    eventName: event.payload.event_name,
+    data: event.payload.data,
+  };
+
+  const events = taskEventsStore.get(event.payload.task_id) || [];
+  events.push(taskEvent);
+  taskEventsStore.set(event.payload.task_id, events);
+
+  taskEventsListeners.get(event.payload.task_id)?.forEach((listener) => {
+    listener(taskEventsStore.get(event.payload.task_id) || []);
+  });
 });
+
+export function useTaskEvents(taskId: string): {
+  events: TaskEvent[];
+  clearEvents: () => void;
+} {
+  const events = useSyncExternalStore(
+    taskEventsStore.subscribe(taskId),
+    taskEventsStore.getState(taskId),
+    taskEventsStore.getState(taskId)
+  );
+
+  const clearEvents = () => {
+    taskEventsStore.clearEvents(taskId);
+  };
+
+  return { events, clearEvents };
+}
