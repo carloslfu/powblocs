@@ -408,43 +408,55 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Sidebar - Blocks List */}
-      <div className="w-64 bg-white border-r border-gray-200 p-4">
-        <div className="mb-4">
-          <Input
-            type="search"
-            placeholder="Search blocks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <div className="space-y-2">
-          {filteredBlocks.map((block) => (
-            <div
-              key={block.id}
-              className={`p-2 rounded cursor-pointer flex justify-between items-center ${
-                selectedBlock?.id === block.id
-                  ? "bg-blue-100"
-                  : "hover:bg-gray-100"
-              }`}
-              onClick={() => handleSelectBlock(block)}
-            >
-              <div className="truncate flex-1">
-                <div className="text-sm font-medium">
-                  {block.title || "Untitled"}
-                </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteBlock(block.id);
-                }}
-                className="text-red-500 hover:text-red-600 ml-2"
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+        {/* Scrollable blocks list */}
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="mb-4">
+            <Input
+              type="search"
+              placeholder="Search blocks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="space-y-2">
+            {filteredBlocks.map((block) => (
+              <div
+                key={block.id}
+                className={`p-2 rounded cursor-pointer flex justify-between items-center ${
+                  selectedBlock?.id === block.id
+                    ? "bg-blue-100"
+                    : "hover:bg-gray-100"
+                }`}
+                onClick={() => handleSelectBlock(block)}
               >
-                <FaTrash size={14} />
-              </button>
-            </div>
-          ))}
+                <div className="truncate flex-1">
+                  <div className="text-sm font-medium">
+                    {block.title || "Untitled"}
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteBlock(block.id);
+                  }}
+                  className="text-red-500 hover:text-red-600 ml-2"
+                >
+                  <FaTrash size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Claude API Key fixed at bottom */}
+        <div className="border-t border-gray-200 p-4">
+          <ClaudeAPIKey
+            onClaudeAPIKeyChange={async (key: string) => {
+              setClaudeKey(key);
+            }}
+          />
         </div>
       </div>
 
@@ -454,12 +466,6 @@ function App() {
           <div className="border-b border-gray-200 p-4">
             <h1 className="text-xl font-medium text-gray-900">PowBlocs</h1>
           </div>
-
-          <ClaudeAPIKey
-            onClaudeAPIKeyChange={async (key: string) => {
-              setClaudeKey(key);
-            }}
-          />
 
           <div className="p-4">
             <div className="mb-4">
@@ -579,37 +585,35 @@ function ClaudeAPIKey({
   }
 
   return (
-    <div className="p-2 bg-white rounded shadow w-fit">
-      <div className="flex gap-2 items-center">
-        <h2 className="text-sm font-semibold">Claude API Key:</h2>
-        {isEditingKey ? (
-          <input
-            type="text"
-            value={claudeKey}
-            onChange={(e) => setClaudeKey(e.target.value)}
-            placeholder="Enter Claude API Key"
-            className="px-2 py-1 border rounded text-sm hover:border-gray-300 transition-colors focus:outline-blue-500"
-            autoFocus
-            onBlur={handleSaveClaudeKey}
-            onKeyDown={handleKeyDown}
-          />
-        ) : (
-          <span className="flex items-center gap-2">
-            <span
-              onClick={() => setIsEditingKey(true)}
-              className="px-2 py-1 border rounded cursor-pointer text-sm"
-            >
-              {claudeKey
-                ? `${claudeKey.slice(0, 12)}...`
-                : "Click to enter API Key"}
-            </span>
-            <FaEdit
-              onClick={() => setIsEditingKey(true)}
-              className="text-blue-500 cursor-pointer hover:text-blue-600 transition-colors text-sm"
-            />
+    <div className="w-full">
+      <h2 className="text-sm font-semibold mb-2">Claude API Key</h2>
+      {isEditingKey ? (
+        <input
+          type="text"
+          value={claudeKey}
+          onChange={(e) => setClaudeKey(e.target.value)}
+          placeholder="Enter Claude API Key"
+          className="w-full px-2 py-1 border rounded text-sm hover:border-gray-300 transition-colors focus:outline-blue-500"
+          autoFocus
+          onBlur={handleSaveClaudeKey}
+          onKeyDown={handleKeyDown}
+        />
+      ) : (
+        <div className="flex items-center gap-2 w-full">
+          <span
+            onClick={() => setIsEditingKey(true)}
+            className="flex-1 px-2 py-1 border rounded cursor-pointer text-sm truncate"
+          >
+            {claudeKey
+              ? `${claudeKey.slice(0, 12)}...`
+              : "Click to enter API Key"}
           </span>
-        )}
-      </div>
+          <FaEdit
+            onClick={() => setIsEditingKey(true)}
+            className="text-blue-500 cursor-pointer hover:text-blue-600 transition-colors text-sm flex-shrink-0"
+          />
+        </div>
+      )}
     </div>
   );
 }
