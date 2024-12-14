@@ -1,7 +1,14 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useLayoutEffect } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
-import { FaEdit, FaPlay, FaSpinner, FaStop, FaTrash } from "react-icons/fa";
+import {
+  FaEdit,
+  FaPlay,
+  FaSpinner,
+  FaStop,
+  FaTrash,
+  FaTrashAlt,
+} from "react-icons/fa";
 import { LuBan } from "react-icons/lu";
 import { Editor, JSONContent } from "@tiptap/react";
 import Fuse from "fuse.js";
@@ -25,6 +32,58 @@ const SPINNER_DELAY = 300;
  * Minimum time to show spinner
  */
 const MIN_SPINNER_DURATION = 500;
+
+function EventLog({ taskId }: { taskId: string }) {
+  const { events, clearEvents } = DenoEngine.useTaskEvents(taskId);
+  const logContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new events arrive
+  useLayoutEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [events]);
+
+  return (
+    <div className="mt-4 border rounded-md">
+      <div className="bg-gray-50 p-2 border-b flex justify-between items-center">
+        <h3 className="text-sm font-medium">Event Log</h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={clearEvents}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <FaTrashAlt className="mr-1" />
+          Clear
+        </Button>
+      </div>
+      <div
+        ref={logContainerRef}
+        className="max-h-[200px] overflow-y-auto p-2 space-y-2 bg-gray-50"
+      >
+        {events.map((event, index) => (
+          <div
+            key={index}
+            className="text-sm font-mono bg-white p-2 rounded border"
+          >
+            <div className="flex justify-between text-xs text-gray-500 mb-1">
+              <span>{event.eventName}</span>
+            </div>
+            <pre className="text-xs overflow-x-auto">
+              {JSON.stringify(event.data, null, 2)}
+            </pre>
+          </div>
+        ))}
+        {events.length === 0 && (
+          <div className="text-sm text-gray-500 text-center py-4">
+            No events yet
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [code, setCode] = useState("");
@@ -464,6 +523,7 @@ function App() {
                       </div>
                     )
                   )}
+                  <EventLog taskId={currentTask.id} />
                 </div>
               </div>
             )}
