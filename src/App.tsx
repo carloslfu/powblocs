@@ -56,8 +56,8 @@ function EventLog({ taskId }: { taskId: string }) {
   }, [events.length]);
 
   return (
-    <div className="mt-4 border rounded-md">
-      <div className="bg-gray-50 p-2 border-b flex justify-between items-center">
+    <div className="h-full flex flex-col">
+      <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
         <h3 className="text-sm font-medium">Event Log</h3>
         <Button
           variant="ghost"
@@ -71,7 +71,7 @@ function EventLog({ taskId }: { taskId: string }) {
       </div>
       <div
         ref={logContainerRef}
-        className="max-h-[200px] overflow-y-auto p-2 space-y-2 bg-gray-50"
+        className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50"
       >
         {events.map((event, index) => (
           <div
@@ -90,6 +90,129 @@ function EventLog({ taskId }: { taskId: string }) {
           <div className="text-sm text-gray-500 text-center py-4">
             No events yet
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaskResults({
+  task,
+  showRunningSpinner,
+}: {
+  task: any;
+  showRunningSpinner: boolean;
+}) {
+  return (
+    <div className="border-b border-gray-200">
+      <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
+        <h3 className="text-sm font-medium">Output</h3>
+        <span
+          className={`text-sm ${
+            task.state === "completed"
+              ? "text-green-500"
+              : task.state === "error"
+              ? "text-red-500"
+              : task.state === "stopped"
+              ? "text-yellow-500"
+              : task.state === "stopping"
+              ? "text-yellow-500"
+              : task.state === "waiting_for_permission"
+              ? "text-orange-500"
+              : "text-blue-500"
+          }`}
+        >
+          {task.state}
+        </span>
+      </div>
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-2 text-sm text-gray-500">
+          <span className="font-mono">{task.id}</span>
+          {(showRunningSpinner || task.state === "running") &&
+            showRunningSpinner && (
+              <FaSpinner className="animate-spin text-blue-500" />
+            )}
+          {task.state === "running" && (
+            <button
+              onClick={() => DenoEngine.stopTask(task.id)}
+              className="text-red-500 hover:text-red-600"
+            >
+              <FaStop />
+            </button>
+          )}
+          {task.state === "stopping" && (
+            <>
+              <FaSpinner className="animate-spin text-yellow-500" />
+              <span className="text-yellow-500">Stopping...</span>
+            </>
+          )}
+          {!["running", "stopping", "waiting_for_permission"].includes(
+            task.state
+          ) && (
+            <button
+              onClick={() => DenoEngine.replayTask(task.id)}
+              className="text-green-500 hover:text-green-600"
+              title="Replay this task"
+            >
+              <FaPlay />
+            </button>
+          )}
+        </div>
+
+        {task.state === "waiting_for_permission" && task.permissionPrompt && (
+          <div className="mb-3 bg-orange-50 border border-orange-200 p-3 rounded-md">
+            <p className="text-sm text-orange-700 mb-2">
+              {task.permissionPrompt.message}
+            </p>
+            <div className="text-sm text-orange-700 mb-2">
+              <div>Name: {task.permissionPrompt.name}</div>
+              <div>API: {task.permissionPrompt.api_name}</div>
+              <div>Unary: {task.permissionPrompt.is_unary ? "Yes" : "No"}</div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  DenoEngine.respondToPermissionPrompt(task.id, "Allow")
+                }
+                className="bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded inline-flex items-center gap-1"
+              >
+                <FaPlay className="text-xs" />
+                Allow
+              </button>
+              <button
+                onClick={() =>
+                  DenoEngine.respondToPermissionPrompt(task.id, "Deny")
+                }
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
+              >
+                <LuBan className="text-xs" />
+                Deny
+              </button>
+              {task.permissionPrompt.is_unary && (
+                <button
+                  onClick={() =>
+                    DenoEngine.respondToPermissionPrompt(task.id, "AllowAll")
+                  }
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
+                >
+                  <FaPlay className="text-xs" />
+                  Allow All
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {task.error ? (
+          <div className="bg-red-50 border border-red-200 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap text-red-600">
+            {task.error}
+          </div>
+        ) : (
+          task.result && (
+            <div className="bg-gray-50 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap">
+              {JSON.stringify(task.result, null, 2)}
+            </div>
+          )
         )}
       </div>
     </div>
@@ -284,7 +407,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
+      {/* Left Sidebar - Blocks List */}
       <div className="w-64 bg-white border-r border-gray-200 p-4">
         <div className="mb-4">
           <Input
@@ -326,8 +449,8 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="flex-1 flex flex-col p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="border-b border-gray-200 p-4">
             <h1 className="text-xl font-medium text-gray-900">PowBlocs</h1>
           </div>
@@ -400,146 +523,23 @@ function App() {
                 "Set Claude API Key to Run Code"
               )}
             </Button>
-
-            {currentTask && (
-              <div className="mt-4">
-                <div key={currentTask.id} className="bg-gray-50 p-3 rounded-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm">
-                        {currentTask.id}
-                      </span>
-                      {(showRunningSpinner ||
-                        currentTask.state === "running") &&
-                        showRunningSpinner && (
-                          <FaSpinner className="animate-spin text-blue-500" />
-                        )}
-                      {currentTask.state === "running" && (
-                        <button
-                          onClick={() => DenoEngine.stopTask(currentTask.id)}
-                          className="text-red-500 hover:text-red-600"
-                        >
-                          <FaStop />
-                        </button>
-                      )}
-                      {currentTask.state === "stopping" && (
-                        <>
-                          <FaSpinner className="animate-spin text-yellow-500" />
-                          <span className="text-yellow-500 text-sm">
-                            Stopping...
-                          </span>
-                        </>
-                      )}
-                      {![
-                        "running",
-                        "stopping",
-                        "waiting_for_permission",
-                      ].includes(currentTask.state) && (
-                        <button
-                          onClick={() => DenoEngine.replayTask(currentTask.id)}
-                          className="text-green-500 hover:text-green-600"
-                          title="Replay this task"
-                        >
-                          <FaPlay />
-                        </button>
-                      )}
-                    </div>
-                    <span
-                      className={`text-sm ${
-                        currentTask.state === "completed"
-                          ? "text-green-500"
-                          : currentTask.state === "error"
-                          ? "text-red-500"
-                          : currentTask.state === "stopped"
-                          ? "text-yellow-500"
-                          : currentTask.state === "stopping"
-                          ? "text-yellow-500"
-                          : currentTask.state === "waiting_for_permission"
-                          ? "text-orange-500"
-                          : "text-blue-500"
-                      }`}
-                    >
-                      {currentTask.state}
-                    </span>
-                  </div>
-                  {currentTask.state === "waiting_for_permission" &&
-                    currentTask.permissionPrompt && (
-                      <div className="mb-3 bg-orange-50 border border-orange-200 p-3 rounded-md">
-                        <p className="text-sm text-orange-700 mb-2">
-                          {currentTask.permissionPrompt.message}
-                        </p>
-                        <div className="text-sm text-orange-700 mb-2">
-                          <div>Name: {currentTask.permissionPrompt.name}</div>
-                          <div>
-                            API: {currentTask.permissionPrompt.api_name}
-                          </div>
-                          <div>
-                            Unary:{" "}
-                            {currentTask.permissionPrompt.is_unary
-                              ? "Yes"
-                              : "No"}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() =>
-                              DenoEngine.respondToPermissionPrompt(
-                                currentTask.id,
-                                "Allow"
-                              )
-                            }
-                            className="bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded inline-flex items-center gap-1"
-                          >
-                            <FaPlay className="text-xs" />
-                            Allow
-                          </button>
-                          <button
-                            onClick={() =>
-                              DenoEngine.respondToPermissionPrompt(
-                                currentTask.id,
-                                "Deny"
-                              )
-                            }
-                            className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
-                          >
-                            <LuBan className="text-xs" />
-                            Deny
-                          </button>
-                          {currentTask.permissionPrompt.is_unary && (
-                            <button
-                              onClick={() =>
-                                DenoEngine.respondToPermissionPrompt(
-                                  currentTask.id,
-                                  "AllowAll"
-                                )
-                              }
-                              className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
-                            >
-                              <FaPlay className="text-xs" />
-                              Allow All
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                  {currentTask.error ? (
-                    <div className="bg-red-50 border border-red-200 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap text-red-600">
-                      {currentTask.error}
-                    </div>
-                  ) : (
-                    currentTask.result && (
-                      <div className="bg-gray-50 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap">
-                        {JSON.stringify(currentTask.result, null, 2)}
-                      </div>
-                    )
-                  )}
-                  <EventLog taskId={currentTask.id} />
-                </div>
-              </div>
-            )}
           </div>
         </div>
+      </div>
+
+      {/* Right Sidebar - Results and Event Log */}
+      <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
+        {currentTask && (
+          <>
+            <TaskResults
+              task={currentTask}
+              showRunningSpinner={showRunningSpinner}
+            />
+            <div className="flex-1">
+              <EventLog taskId={currentTask.id} />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
