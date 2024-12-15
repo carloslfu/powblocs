@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import StarterKit from "@tiptap/starter-kit";
 import { Editor, EditorContent, JSONContent, useEditor } from "@tiptap/react";
-import { Color } from "@tiptap/extension-color";
+import Color from "@tiptap/extension-color";
 import ListItem from "@tiptap/extension-list-item";
 import TextStyle from "@tiptap/extension-text-style";
 import Placeholder from "@tiptap/extension-placeholder";
