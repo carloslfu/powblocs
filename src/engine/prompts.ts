@@ -17,7 +17,7 @@ He is an example:
 <code>
 import * as cowsay from "https://esm.sh/cowsay@1.6.0";
 
-Pow.registerAction("main", () => {
+Pow.registerAction("main", async () => {
   let result = cowsay.say({ text: "🤠 🚀" });
 
   // count to 100 and wait 1 second between each number
@@ -26,16 +26,16 @@ Pow.registerAction("main", () => {
     await Pow.sleep(1000);
   }
 
-  Pow.returnValue(result);
+  Pow.returnValue({ result });
 });
 
-Pow.registerAction("cowsay", (text: string) => {
+Pow.registerAction("cowsay", async ({ text }: { text: string }) => {
   let result = cowsay.say({ text });
 
-  Pow.returnValue(result);
+  Pow.returnValue({ result });
 });
 
-Pow.registerAction("count", (to: number) => {
+Pow.registerAction("count", async ({ to }: { to: number }) => {
   for (let i = 0; i < to; i++) {
     Pow.send("progress", { progress: i });
     await Pow.sleep(1000);

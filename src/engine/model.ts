@@ -13,14 +13,19 @@ export type Block = {
   description: JSONContent;
 
   /**
-   * The code of the block
+   * The backend code of the block
    */
-  code: string;
+  backendCode: string;
 
   /**
    * The actions of the block in JSON schema format
    */
   actions: ActionSchema;
+
+  /**
+   * The UI code of the block
+   */
+  uiCode: string;
 };
 
 export type CodeStore = {

@@ -41,16 +41,6 @@ const SPINNER_DELAY = 300;
  */
 const MIN_SPINNER_DURATION = 500;
 
-interface ActionInput {
-  name: string;
-  value: string;
-}
-
-interface ActionDefinition {
-  name: string;
-  code: string;
-}
-
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="flex-1 flex items-center justify-center p-8 text-center">
@@ -301,7 +291,8 @@ function ActionInputs({
 }
 
 function App() {
-  const [code, setCode] = useState("");
+  const [backendCode, setBackendCode] = useState("");
+  const [uiCode, setUiCode] = useState("");
   const [actions, setActions] = useState<ActionSchema>([]);
   const [claudeKey, setClaudeKey] = useState<string>("");
   const [engine, setEngine] = useState<PowBlocksEngine | null>(null);
@@ -371,7 +362,11 @@ function App() {
 
   const handleRunCode = async (actionName: string = "main") => {
     try {
-      const taskId = await DenoEngine.runCode(actionName, actionValues, code);
+      const taskId = await DenoEngine.runCode(
+        actionName,
+        actionValues,
+        backendCode
+      );
       setCurrentTaskId(taskId);
 
       spinnerTimeout.current = setTimeout(() => {
@@ -404,7 +399,8 @@ function App() {
         description,
         selectedBlock?.id
       );
-      setCode(block.code);
+      setBackendCode(block.backendCode);
+      setUiCode(block.uiCode);
       setActions(block.actions);
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
@@ -420,7 +416,8 @@ function App() {
   const handleSelectBlock = (block: Block) => {
     setSelectedBlock(block);
     setDescription(block.description);
-    setCode(block.code);
+    setBackendCode(block.backendCode);
+    setUiCode(block.uiCode);
     setActions(block.actions);
     setActionValues({});
     const htmlContent = block.description;
@@ -429,8 +426,8 @@ function App() {
     }
   };
 
-  const handleCodeChange = async (newCode: string) => {
-    setCode(newCode);
+  const handleBackendCodeChange = async (newCode: string) => {
+    setBackendCode(newCode);
 
     if (engine && selectedBlock) {
       const updatedBlock = {
@@ -441,6 +438,18 @@ function App() {
 
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
+    }
+  };
+
+  const handleUiCodeChange = async (newCode: string) => {
+    setUiCode(newCode);
+
+    if (engine && selectedBlock) {
+      const updatedBlock = {
+        ...selectedBlock,
+        uiCode: newCode,
+      };
+      await engine.store.updateBlock(updatedBlock.id, updatedBlock);
     }
   };
 
@@ -469,7 +478,8 @@ function App() {
       setBlocks(blocks);
       if (selectedBlock?.id === blockId) {
         setSelectedBlock(undefined);
-        setCode("");
+        setBackendCode("");
+        setUiCode("");
         setActions([]);
         setDescription(undefined);
       }
@@ -480,7 +490,8 @@ function App() {
 
   const handleCreateNewBlock = () => {
     setSelectedBlock(undefined);
-    setCode("");
+    setBackendCode("");
+    setUiCode("");
     setDescription(undefined);
     setActions([]);
     setActionValues({});
@@ -590,12 +601,26 @@ function App() {
             </Button>
           </div>
 
-          <CodeMirror
-            value={code}
-            height="200px"
-            extensions={[javascript({ jsx: true })]}
-            onChange={handleCodeChange}
-          />
+          <div className="mt-4">
+            <h3 className="text-sm font-medium mb-2">Backend Code</h3>
+            <CodeMirror
+              value={backendCode}
+              height="200px"
+              extensions={[javascript({ jsx: true })]}
+              onChange={handleBackendCodeChange}
+            />
+          </div>
+
+          <div className="mt-4">
+            <h3 className="text-sm font-medium mb-2">UI Code</h3>
+            <CodeMirror
+              value={uiCode}
+              height="200px"
+              extensions={[javascript({ jsx: true })]}
+              onChange={handleUiCodeChange}
+            />
+          </div>
+
           {actions.length > 0 && (
             <div className="mt-4 mb-4">
               <h3 className="text-sm font-medium mb-2">Actions</h3>
