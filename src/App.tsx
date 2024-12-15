@@ -40,12 +40,30 @@ const SPINNER_DELAY = 300;
  */
 const MIN_SPINNER_DURATION = 500;
 
-function EventLog({ taskId }: { taskId: string }) {
-  const { events, clearEvents } = DenoEngine.useTaskEvents(taskId);
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex-1 flex items-center justify-center p-8 text-center">
+      <div className="text-gray-400">
+        <div className="text-sm">{message}</div>
+      </div>
+    </div>
+  );
+}
+
+function EventLog({ taskId }: { taskId?: string }) {
+  const { events, clearEvents } = DenoEngine.useTaskEvents(taskId || "");
   const logContainerRef = useRef<HTMLDivElement>(null);
   const prevEventsLengthRef = useRef(events.length);
 
+  const handleClear = useCallback(() => {
+    if (taskId) {
+      clearEvents();
+    }
+  }, [taskId, clearEvents]);
+
   useLayoutEffect(() => {
+    if (!taskId) return;
+
     const container = logContainerRef.current;
     if (container && events.length > prevEventsLengthRef.current) {
       requestAnimationFrame(() => {
@@ -53,43 +71,46 @@ function EventLog({ taskId }: { taskId: string }) {
       });
     }
     prevEventsLengthRef.current = events.length;
-  }, [events.length]);
+  }, [events.length, taskId]);
+
+  const displayEvents = taskId ? events : [];
 
   return (
     <div className="h-full flex flex-col">
       <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
         <h3 className="text-sm font-medium">Event Log</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={clearEvents}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <FaTrashAlt className="mr-1" />
-          Clear
-        </Button>
+        {displayEvents.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <FaTrashAlt className="mr-1" />
+            Clear
+          </Button>
+        )}
       </div>
       <div
         ref={logContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50"
       >
-        {events.map((event, index) => (
-          <div
-            key={`${taskId}-${index}`}
-            className="text-sm font-mono bg-white p-2 rounded border"
-          >
-            <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>{event.eventName}</span>
+        {displayEvents.length > 0 ? (
+          displayEvents.map((event, index) => (
+            <div
+              key={`${taskId}-${index}`}
+              className="text-sm font-mono bg-white p-2 rounded border"
+            >
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>{event.eventName}</span>
+              </div>
+              <pre className="text-xs overflow-x-auto">
+                {JSON.stringify(event.data, null, 2)}
+              </pre>
             </div>
-            <pre className="text-xs overflow-x-auto">
-              {JSON.stringify(event.data, null, 2)}
-            </pre>
-          </div>
-        ))}
-        {events.length === 0 && (
-          <div className="text-sm text-gray-500 text-center py-4">
-            No events yet
-          </div>
+          ))
+        ) : (
+          <EmptyState message="No events yet" />
         )}
       </div>
     </div>
@@ -100,121 +121,129 @@ function TaskResults({
   task,
   showRunningSpinner,
 }: {
-  task: any;
+  task?: any;
   showRunningSpinner: boolean;
 }) {
   return (
     <div className="border-b border-gray-200">
       <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
         <h3 className="text-sm font-medium">Output</h3>
-        <span
-          className={`text-sm ${
-            task.state === "completed"
-              ? "text-green-500"
-              : task.state === "error"
-              ? "text-red-500"
-              : task.state === "stopped"
-              ? "text-yellow-500"
-              : task.state === "stopping"
-              ? "text-yellow-500"
-              : task.state === "waiting_for_permission"
-              ? "text-orange-500"
-              : "text-blue-500"
-          }`}
-        >
-          {task.state}
-        </span>
+        {task && (
+          <span
+            className={`text-sm ${
+              task.state === "completed"
+                ? "text-green-500"
+                : task.state === "error"
+                ? "text-red-500"
+                : task.state === "stopped"
+                ? "text-yellow-500"
+                : task.state === "stopping"
+                ? "text-yellow-500"
+                : task.state === "waiting_for_permission"
+                ? "text-orange-500"
+                : "text-blue-500"
+            }`}
+          >
+            {task.state}
+          </span>
+        )}
       </div>
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-2 text-sm text-gray-500">
-          <span className="font-mono">{task.id}</span>
-          {(showRunningSpinner || task.state === "running") &&
-            showRunningSpinner && (
-              <FaSpinner className="animate-spin text-blue-500" />
+      {task ? (
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2 text-sm text-gray-500">
+            <span className="font-mono">{task.id}</span>
+            {(showRunningSpinner || task.state === "running") &&
+              showRunningSpinner && (
+                <FaSpinner className="animate-spin text-blue-500" />
+              )}
+            {task.state === "running" && (
+              <button
+                onClick={() => DenoEngine.stopTask(task.id)}
+                className="text-red-500 hover:text-red-600"
+              >
+                <FaStop />
+              </button>
             )}
-          {task.state === "running" && (
-            <button
-              onClick={() => DenoEngine.stopTask(task.id)}
-              className="text-red-500 hover:text-red-600"
-            >
-              <FaStop />
-            </button>
-          )}
-          {task.state === "stopping" && (
-            <>
-              <FaSpinner className="animate-spin text-yellow-500" />
-              <span className="text-yellow-500">Stopping...</span>
-            </>
-          )}
-          {!["running", "stopping", "waiting_for_permission"].includes(
-            task.state
-          ) && (
-            <button
-              onClick={() => DenoEngine.replayTask(task.id)}
-              className="text-green-500 hover:text-green-600"
-              title="Replay this task"
-            >
-              <FaPlay />
-            </button>
-          )}
-        </div>
+            {task.state === "stopping" && (
+              <>
+                <FaSpinner className="animate-spin text-yellow-500" />
+                <span className="text-yellow-500">Stopping...</span>
+              </>
+            )}
+            {!["running", "stopping", "waiting_for_permission"].includes(
+              task.state
+            ) && (
+              <button
+                onClick={() => DenoEngine.replayTask(task.id)}
+                className="text-green-500 hover:text-green-600"
+                title="Replay this task"
+              >
+                <FaPlay />
+              </button>
+            )}
+          </div>
 
-        {task.state === "waiting_for_permission" && task.permissionPrompt && (
-          <div className="mb-3 bg-orange-50 border border-orange-200 p-3 rounded-md">
-            <p className="text-sm text-orange-700 mb-2">
-              {task.permissionPrompt.message}
-            </p>
-            <div className="text-sm text-orange-700 mb-2">
-              <div>Name: {task.permissionPrompt.name}</div>
-              <div>API: {task.permissionPrompt.api_name}</div>
-              <div>Unary: {task.permissionPrompt.is_unary ? "Yes" : "No"}</div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() =>
-                  DenoEngine.respondToPermissionPrompt(task.id, "Allow")
-                }
-                className="bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded inline-flex items-center gap-1"
-              >
-                <FaPlay className="text-xs" />
-                Allow
-              </button>
-              <button
-                onClick={() =>
-                  DenoEngine.respondToPermissionPrompt(task.id, "Deny")
-                }
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
-              >
-                <LuBan className="text-xs" />
-                Deny
-              </button>
-              {task.permissionPrompt.is_unary && (
+          {task.state === "waiting_for_permission" && task.permissionPrompt && (
+            <div className="mb-3 bg-orange-50 border border-orange-200 p-3 rounded-md">
+              <p className="text-sm text-orange-700 mb-2">
+                {task.permissionPrompt.message}
+              </p>
+              <div className="text-sm text-orange-700 mb-2">
+                <div>Name: {task.permissionPrompt.name}</div>
+                <div>API: {task.permissionPrompt.api_name}</div>
+                <div>
+                  Unary: {task.permissionPrompt.is_unary ? "Yes" : "No"}
+                </div>
+              </div>
+              <div className="flex gap-2">
                 <button
                   onClick={() =>
-                    DenoEngine.respondToPermissionPrompt(task.id, "AllowAll")
+                    DenoEngine.respondToPermissionPrompt(task.id, "Allow")
+                  }
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded inline-flex items-center gap-1"
+                >
+                  <FaPlay className="text-xs" />
+                  Allow
+                </button>
+                <button
+                  onClick={() =>
+                    DenoEngine.respondToPermissionPrompt(task.id, "Deny")
                   }
                   className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
                 >
-                  <FaPlay className="text-xs" />
-                  Allow All
+                  <LuBan className="text-xs" />
+                  Deny
                 </button>
-              )}
+                {task.permissionPrompt.is_unary && (
+                  <button
+                    onClick={() =>
+                      DenoEngine.respondToPermissionPrompt(task.id, "AllowAll")
+                    }
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-1 px-3 rounded inline-flex items-center gap-1"
+                  >
+                    <FaPlay className="text-xs" />
+                    Allow All
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {task.error ? (
-          <div className="bg-red-50 border border-red-200 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap text-red-600">
-            {task.error}
-          </div>
-        ) : (
-          task.result && (
-            <div className="bg-gray-50 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap">
-              {JSON.stringify(task.result, null, 2)}
+          {task.error ? (
+            <div className="bg-red-50 border border-red-200 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap text-red-600">
+              {task.error}
             </div>
-          )
-        )}
-      </div>
+          ) : (
+            task.result && (
+              <div className="bg-gray-50 p-3 rounded-md font-mono text-sm overflow-auto max-h-64 whitespace-pre-wrap">
+                {JSON.stringify(task.result, null, 2)}
+              </div>
+            )
+          )}
+        </div>
+      ) : (
+        <EmptyState message="Run your code to see the output" />
+      )}
     </div>
   );
 }
@@ -535,17 +564,13 @@ function App() {
 
       {/* Right Sidebar - Results and Event Log */}
       <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
-        {currentTask && (
-          <>
-            <TaskResults
-              task={currentTask}
-              showRunningSpinner={showRunningSpinner}
-            />
-            <div className="flex-1">
-              <EventLog taskId={currentTask.id} />
-            </div>
-          </>
-        )}
+        <TaskResults
+          task={currentTask}
+          showRunningSpinner={showRunningSpinner}
+        />
+        <div className="flex-1">
+          <EventLog taskId={currentTask?.id} />
+        </div>
       </div>
     </div>
   );
