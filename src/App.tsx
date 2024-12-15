@@ -491,74 +491,68 @@ function App() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col p-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="border-b border-gray-200 p-4">
-            <h1 className="text-xl font-medium text-gray-900">PowBlocs</h1>
-          </div>
-
-          <div className="p-4">
-            <div className="mb-4">
-              <TextEditor
-                onChange={handleDescriptionChange}
-                onEditorReady={(editor) => {
-                  editorRef.current = editor;
-                }}
-                initialContent={selectedBlock?.description}
-              />
-              <Button
-                onClick={handleGenerateCode}
-                className="mt-2"
-                disabled={!engine || !description || isGenerating}
-              >
-                {isGenerating ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <FaSpinner className="animate-spin" />
-                    Generating...
-                  </span>
-                ) : (
-                  "Generate Code"
-                )}
-              </Button>
-            </div>
-
-            <CodeMirror
-              value={code}
-              height="200px"
-              extensions={[javascript({ jsx: true })]}
-              onChange={handleCodeChange}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="mb-4">
+            <TextEditor
+              onChange={handleDescriptionChange}
+              onEditorReady={(editor) => {
+                editorRef.current = editor;
+              }}
+              initialContent={selectedBlock?.description}
             />
             <Button
-              onClick={handleRunCode}
-              className="mt-3"
-              disabled={
-                !engine ||
-                showRunningSpinner ||
-                (currentTask &&
-                  showRunningSpinner &&
-                  currentTask.state !== "completed" &&
-                  currentTask.state !== "error" &&
-                  currentTask.state !== "stopped") ||
-                !code
-              }
+              onClick={handleGenerateCode}
+              className="mt-2"
+              disabled={!engine || !description || isGenerating}
             >
-              {showRunningSpinner ||
-              (currentTask &&
-                currentTask.state === "running" &&
-                showRunningSpinner) ? (
+              {isGenerating ? (
                 <span className="flex items-center justify-center gap-2">
                   <FaSpinner className="animate-spin" />
-                  Running...
+                  Generating...
                 </span>
-              ) : currentTask &&
-                currentTask.state === "waiting_for_permission" ? (
-                "Waiting for Permission"
-              ) : engine ? (
-                "Run Code"
               ) : (
-                "Set Claude API Key to Run Code"
+                "Generate Code"
               )}
             </Button>
           </div>
+
+          <CodeMirror
+            value={code}
+            height="200px"
+            extensions={[javascript({ jsx: true })]}
+            onChange={handleCodeChange}
+          />
+          <Button
+            onClick={handleRunCode}
+            className="mt-3"
+            disabled={
+              !engine ||
+              showRunningSpinner ||
+              (currentTask &&
+                showRunningSpinner &&
+                currentTask.state !== "completed" &&
+                currentTask.state !== "error" &&
+                currentTask.state !== "stopped") ||
+              !code
+            }
+          >
+            {showRunningSpinner ||
+            (currentTask &&
+              currentTask.state === "running" &&
+              showRunningSpinner) ? (
+              <span className="flex items-center justify-center gap-2">
+                <FaSpinner className="animate-spin" />
+                Running...
+              </span>
+            ) : currentTask &&
+              currentTask.state === "waiting_for_permission" ? (
+              "Waiting for Permission"
+            ) : engine ? (
+              "Run Code"
+            ) : (
+              "Set Claude API Key to Run Code"
+            )}
+          </Button>
         </div>
       </div>
 
