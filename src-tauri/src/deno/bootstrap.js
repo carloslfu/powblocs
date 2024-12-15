@@ -18,4 +18,8 @@ function registerAction(actionName, action) {
   }
 }
 
-globalThis.Pow = { returnValue, documentDir, send, registerAction };
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+globalThis.Pow = { returnValue, documentDir, send, registerAction, sleep };
