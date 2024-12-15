@@ -15,6 +15,8 @@ function send(eventName, data) {
 function registerAction(actionName, action) {
   if (globalThis.Pow.actionName === actionName) {
     action(globalThis.Pow.actionData);
+
+    globalThis.Pow.actionHandled = true;
   }
 }
 
@@ -22,4 +24,11 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-globalThis.Pow = { returnValue, documentDir, send, registerAction, sleep };
+globalThis.Pow = {
+  returnValue,
+  documentDir,
+  send,
+  registerAction,
+  sleep,
+  actionHandled: false,
+};

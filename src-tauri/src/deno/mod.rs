@@ -406,7 +406,9 @@ globalThis.Pow.actionData = {action_data};
 {code}
 
 // default action
-throw new Error(`No action defined for {action_name}`)"
+if (!globalThis.Pow.actionHandled) {{
+    throw new Error(\"No action defined for {action_name}\");
+}}"
     );
 
     std::fs::write(&temp_code_path, augmented_code).unwrap();
