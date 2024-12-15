@@ -2,8 +2,8 @@ mod deno;
 mod sqlite;
 
 #[tauri::command]
-fn run_task(task_id: &str, code: &str) -> Result<(), String> {
-    deno::run_task(task_id, code)
+fn run_task(task_id: &str, action_name: &str, action_data: &str, code: &str) -> Result<(), String> {
+    deno::run_task(task_id, action_name, action_data, code)
 }
 
 #[tauri::command]

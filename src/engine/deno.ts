@@ -14,6 +14,8 @@ export type TaskState =
 
 export type Task = {
   id: string;
+  actionName: string;
+  actionData: Record<string, any>;
   code: string;
   state: TaskState;
   result?: Record<string, any>;
@@ -34,6 +36,8 @@ type PermissionPrompt = {
 type InternalTask = {
   id: string;
   state: TaskState;
+  action_name: string;
+  action_data: Record<string, any>;
   return_value?: string;
   error?: string;
   permission_prompt?: PermissionPrompt;
@@ -136,6 +140,8 @@ await listen<InternalTask>("task-state-changed", (event) => {
   externalTaskStore.setState(task.id, {
     id: task.id,
     code: currentTask.code,
+    actionName: task.action_name,
+    actionData: task.action_data,
     state: task.state,
     result,
     error: task.error,
@@ -144,12 +150,18 @@ await listen<InternalTask>("task-state-changed", (event) => {
   });
 });
 
-export async function runCode(codeToRun: string): Promise<string> {
+export async function runCode(
+  actionName: string,
+  actionData: Record<string, any>,
+  codeToRun: string
+): Promise<string> {
   const newTaskId = nanoid();
   const newTask: Task = {
     id: newTaskId,
     code: codeToRun,
     state: "running",
+    actionName,
+    actionData,
   };
 
   try {

@@ -40,7 +40,12 @@ static EVENTS_CHANNEL: Lazy<(Sender<Event>, Receiver<Event>)> = Lazy::new(|| {
     (tx, rx)
 });
 
-pub fn run_task(task_id: &str, code: &str) -> Result<(), String> {
+pub fn run_task(
+    task_id: &str,
+    action_name: &str,
+    action_data: &str,
+    code: &str,
+) -> Result<(), String> {
     let code = code.to_string();
 
     let task_id = task_id.to_string();
@@ -52,6 +57,9 @@ pub fn run_task(task_id: &str, code: &str) -> Result<(), String> {
         .lock()
         .unwrap()
         .insert(task_id.clone(), stop_tx);
+
+    let action_name = action_name.to_string();
+    let action_data = action_data.to_string();
 
     let handle = std::thread::spawn(move || {
         println!("Starting runtime");
@@ -65,7 +73,7 @@ pub fn run_task(task_id: &str, code: &str) -> Result<(), String> {
 
         let _ = runtime.block_on(async {
             tokio::select! {
-                _ = run(&task_id_clone, &code) => {},
+                _ = run(&task_id_clone, &action_name, &action_data, &code) => {},
                 _ = stop_rx => {
                     println!("Task stopped");
                 }
@@ -370,7 +378,12 @@ impl PermissionPrompter for CustomPrompter {
     }
 }
 
-pub async fn run(task_id: &str, code: &str) -> Result<(), AnyError> {
+pub async fn run(
+    task_id: &str,
+    action_name: &str,
+    action_data: &str,
+    code: &str,
+) -> Result<(), AnyError> {
     // path of user directory
     let user_dir = dirs::home_dir().unwrap();
 
@@ -385,7 +398,9 @@ pub async fn run(task_id: &str, code: &str) -> Result<(), AnyError> {
 
     println!("Writing code to {}", temp_code_path.display());
 
-    let augmented_code = format!("globalThis.Pow.taskId = \"{task_id}\";\n\n{code}");
+    let augmented_code = format!(
+        "globalThis.Pow.taskId = \"{task_id}\";\nglobalThis.Pow.actionName = \"{action_name}\";\nglobalThis.Pow.actionData = {action_data};\n\n{code}"
+    );
 
     std::fs::write(&temp_code_path, augmented_code).unwrap();
 

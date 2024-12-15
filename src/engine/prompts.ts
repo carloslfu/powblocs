@@ -25,7 +25,12 @@ Pow is a global object that contains the PowBlocs runtime functionality, here ar
 - Pow.returnValue(result: Record<string, any>): returns the result to the PowBlocs runtime. Use it for any output that doesn't need streaming, the final result.
 - Pow.sleep(ms: number): sleeps for the given number of milliseconds.
 - Pow.documentDir(): returns the path to the user's document directory.
-- Pow.taskId: the id of the current task, it is set by the PowBlocs runtime.
+- Pow.taskId: the id of the current task, it is set by the PowBlocs runtime. This is internally set and used by the PowBlocs runtime to identify the task.
+- Pow.registerAction(actionName: string, action: (data: Record<string, any>) => void): registers an action that can be called by the PowBlocs runtime. The runtime will call the actions from a UI with list of actions. These are the entry points for the user to interact with the block.
+- Pow.actionName: the name of the action that is currently being executed. This is set and internally used by the PowBlocs runtime.
+- Pow.actionData: the data of the action that is currently being executed. This is set and internally used by the PowBlocs runtime.
+
+This script is re-executed every time the user runs an action.
 
 Generate the code only, no intro, no explanation, no markdown, just the code inside <code></code> tags.`;
 }

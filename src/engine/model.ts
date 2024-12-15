@@ -1,4 +1,5 @@
 import { JSONContent } from "@tiptap/react";
+import { ActionSchema } from "./engine";
 
 export type Block = {
   id: string;
@@ -15,6 +16,11 @@ export type Block = {
    * The code of the block
    */
   code: string;
+
+  /**
+   * The actions of the block in JSON schema format
+   */
+  actions: ActionSchema;
 };
 
 export type CodeStore = {

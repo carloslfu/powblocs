@@ -1,13 +1,24 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateHTML, JSONContent } from "@tiptap/react";
 import { textEditorExtensions } from "@/components/TextEditor";
-import { generateText, LanguageModelV1 } from "ai";
+import { generateObject, generateText, LanguageModelV1 } from "ai";
 import { fetch } from "@tauri-apps/plugin-http";
 import TurndownService from "turndown";
+import { z } from "zod";
 
 import { APIKeys, CodeStore } from "./model";
 import { Block } from "./model";
 import { generateFunctionBlockPrompt } from "./prompts";
+
+export const actionSchema = z.array(
+  z.object({
+    name: z.string(),
+    description: z.string(),
+    schema: z.record(z.any()),
+  })
+);
+
+export type ActionSchema = z.infer<typeof actionSchema>;
 
 export class PowBlocksEngine {
   store: CodeStore;
@@ -15,6 +26,7 @@ export class PowBlocksEngine {
   turndownService = new TurndownService();
 
   private model: LanguageModelV1;
+  private smallModel: LanguageModelV1;
 
   constructor({ store, apiKeys }: { store: CodeStore; apiKeys: APIKeys }) {
     this.store = store;
@@ -32,6 +44,7 @@ export class PowBlocksEngine {
     });
 
     this.model = anthropic("claude-3-5-sonnet-20241022");
+    this.smallModel = anthropic("claude-3-5-haiku-latest");
   }
 
   async updateOrCreateBlock(
@@ -72,11 +85,24 @@ Pow.returnValue('Error: No code generated');`;
 
     let trimmedTitle = title?.trim() || "Untitled";
 
+    /**
+     * Generate actions for the block. An API for the visual layer to interact with the block.
+     */
+    const actionsResult = await generateObject({
+      model: this.smallModel,
+      schema: z.object({
+        actions: actionSchema,
+      }),
+    });
+
+    const actions = actionsResult.object.actions;
+
     if (blockId) {
       await this.store.updateBlock(blockId, {
         description,
         code,
         title: trimmedTitle,
+        actions,
       });
 
       return {
@@ -84,6 +110,7 @@ Pow.returnValue('Error: No code generated');`;
         description,
         code,
         title: trimmedTitle,
+        actions,
       };
     }
 
@@ -91,6 +118,7 @@ Pow.returnValue('Error: No code generated');`;
       description,
       code,
       title: trimmedTitle,
+      actions,
     });
   }
 }

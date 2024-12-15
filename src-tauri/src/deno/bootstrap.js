@@ -12,4 +12,10 @@ function send(eventName, data) {
   ops.custom_op_send(globalThis.Pow.taskId, eventName, JSON.stringify(data));
 }
 
-globalThis.Pow = { returnValue, documentDir, send };
+function registerAction(actionName, action) {
+  if (globalThis.Pow.actionName === actionName) {
+    action(globalThis.Pow.actionData);
+  }
+}
+
+globalThis.Pow = { returnValue, documentDir, send, registerAction };

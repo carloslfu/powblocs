@@ -16,12 +16,12 @@ import {
   FaTrash,
   FaTrashAlt,
 } from "react-icons/fa";
-import { LuBan } from "react-icons/lu";
+import { LuBan, LuPlus } from "react-icons/lu";
 import { Editor, JSONContent } from "@tiptap/react";
 import Fuse from "fuse.js";
 
 import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
-import { PowBlocksEngine } from "./engine/engine";
+import { ActionSchema, PowBlocksEngine } from "./engine/engine";
 import { LocalEngineStore } from "./engine/localEngineStore";
 import { Block } from "./engine/model";
 import { TextEditor } from "./components/TextEditor/index";
@@ -250,6 +250,7 @@ function TaskResults({
 
 function App() {
   const [code, setCode] = useState("");
+  const [actions, setActions] = useState<ActionSchema>([]);
   const [claudeKey, setClaudeKey] = useState<string>("");
   const [engine, setEngine] = useState<PowBlocksEngine | null>(null);
   const [description, setDescription] = useState<JSONContent | undefined>();
@@ -316,7 +317,7 @@ function App() {
 
   const handleRunCode = async () => {
     try {
-      const taskId = await DenoEngine.runCode(code);
+      const taskId = await DenoEngine.runCode("main", {}, code);
       setCurrentTaskId(taskId);
 
       spinnerTimeout.current = setTimeout(() => {
@@ -355,6 +356,7 @@ function App() {
         selectedBlock?.id
       );
       setCode(block.code);
+      setActions(block.actions);
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
 
@@ -370,6 +372,7 @@ function App() {
     setSelectedBlock(block);
     setDescription(block.description);
     setCode(block.code);
+    setActions(block.actions);
     const htmlContent = block.description;
     if (editorRef.current) {
       editorRef.current.commands.setContent(htmlContent);
@@ -417,10 +420,21 @@ function App() {
       if (selectedBlock?.id === blockId) {
         setSelectedBlock(undefined);
         setCode("");
+        setActions([]);
         setDescription(undefined);
       }
     } catch (error) {
       console.error("Failed to delete block:", error);
+    }
+  };
+
+  const handleCreateNewBlock = () => {
+    setSelectedBlock(undefined);
+    setCode("");
+    setDescription(undefined);
+    setActions([]);
+    if (editorRef.current) {
+      editorRef.current.commands.setContent("");
     }
   };
 
@@ -440,14 +454,22 @@ function App() {
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
         {/* Scrollable blocks list */}
         <div className="flex-1 p-4 overflow-y-auto">
-          <div className="mb-4">
+          <div className="mb-4 flex gap-2">
             <Input
               type="search"
               placeholder="Search blocks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
+              className="flex-1"
             />
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleCreateNewBlock}
+              title="Create new block"
+            >
+              <LuPlus className="h-4 w-4" />
+            </Button>
           </div>
           <div className="space-y-2">
             {filteredBlocks.map((block) => (
