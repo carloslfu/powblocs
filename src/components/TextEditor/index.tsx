@@ -5,6 +5,7 @@ import { Editor, EditorContent, JSONContent, useEditor } from "@tiptap/react";
 import { Color } from "@tiptap/extension-color";
 import ListItem from "@tiptap/extension-list-item";
 import TextStyle from "@tiptap/extension-text-style";
+import Placeholder from "@tiptap/extension-placeholder";
 
 import "./styles.css";
 
@@ -12,6 +13,7 @@ type TextEditorProps = {
   onChange: (value: JSONContent) => void;
   onEditorReady: (editor: Editor) => void;
   initialContent?: JSONContent;
+  placeholder?: string;
 };
 
 export const textEditorExtensions = [
@@ -33,9 +35,13 @@ export function TextEditor({
   onChange,
   onEditorReady,
   initialContent,
+  placeholder = "",
 }: TextEditorProps) {
   const editor = useEditor({
-    extensions: textEditorExtensions,
+    extensions: [
+      ...textEditorExtensions,
+      Placeholder.configure({ placeholder }),
+    ],
     content: initialContent,
     onUpdate: ({ editor }) => {
       onChange(editor.getJSON());

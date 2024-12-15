@@ -499,6 +499,7 @@ function App() {
                 editorRef.current = editor;
               }}
               initialContent={selectedBlock?.description}
+              placeholder="Describe your block..."
             />
             <Button
               onClick={handleGenerateCode}
