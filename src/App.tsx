@@ -29,6 +29,7 @@ import { TextEditor } from "./components/TextEditor/index";
 import * as DenoEngine from "@/engine/deno";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
+import { Label } from "./components/ui/label";
 
 /**
  * Delay before showing spinner
@@ -39,6 +40,11 @@ const SPINNER_DELAY = 300;
  * Minimum time to show spinner
  */
 const MIN_SPINNER_DURATION = 500;
+
+interface ActionInput {
+  name: string;
+  value: string;
+}
 
 function EmptyState({ message }: { message: string }) {
   return (
@@ -248,6 +254,36 @@ function TaskResults({
   );
 }
 
+function ActionInputs({
+  actions,
+  values,
+  onChange,
+}: {
+  actions: ActionSchema;
+  values: Record<string, string>;
+  onChange: (values: Record<string, string>) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {actions.map((action, index) => (
+        <div key={index} className="space-y-2">
+          <Label htmlFor={action.name}>{action.name}</Label>
+          <Input
+            id={action.name}
+            value={values[action.name] || ""}
+            onChange={(e) => {
+              const newValues = { ...values };
+              newValues[action.name] = e.target.value;
+              onChange(newValues);
+            }}
+            placeholder={`Enter ${action.name.toLowerCase()}`}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function App() {
   const [code, setCode] = useState("");
   const [actions, setActions] = useState<ActionSchema>([]);
@@ -285,6 +321,8 @@ function App() {
     return fuse.search(searchQuery).map((result) => result.item);
   }, [fuse, searchQuery, blocks]);
 
+  const [actionValues, setActionValues] = useState<Record<string, string>>({});
+
   useEffect(() => {
     // Load initial Claude API key
     getClaudeAPIKey().then((key) => {
@@ -317,15 +355,10 @@ function App() {
 
   const handleRunCode = async () => {
     try {
-      const taskId = await DenoEngine.runCode("main", {}, code);
+      const taskId = await DenoEngine.runCode("main", actionValues, code);
       setCurrentTaskId(taskId);
 
       spinnerTimeout.current = setTimeout(() => {
-        console.log("here setTimeout called --");
-        console.log(
-          "here setTimeout called --2",
-          currentTaskRef.current?.state
-        );
         if (
           currentTaskRef.current &&
           (currentTaskRef.current.state === "running" ||
@@ -373,6 +406,7 @@ function App() {
     setDescription(block.description);
     setCode(block.code);
     setActions(block.actions);
+    setActionValues({});
     const htmlContent = block.description;
     if (editorRef.current) {
       editorRef.current.commands.setContent(htmlContent);
@@ -433,6 +467,7 @@ function App() {
     setCode("");
     setDescription(undefined);
     setActions([]);
+    setActionValues({});
     if (editorRef.current) {
       editorRef.current.commands.setContent("");
     }
@@ -545,6 +580,11 @@ function App() {
             extensions={[javascript({ jsx: true })]}
             onChange={handleCodeChange}
           />
+          <ActionInputs
+            actions={actions}
+            values={actionValues}
+            onChange={(values) => setActionValues(values)}
+          />
           <Button
             onClick={handleRunCode}
             className="mt-3"
@@ -552,10 +592,8 @@ function App() {
               !engine ||
               showRunningSpinner ||
               (currentTask &&
-                showRunningSpinner &&
-                currentTask.state !== "completed" &&
-                currentTask.state !== "error" &&
-                currentTask.state !== "stopped") ||
+                currentTask.state === "running" &&
+                showRunningSpinner) ||
               !code
             }
           >

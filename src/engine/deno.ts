@@ -150,6 +150,13 @@ await listen<InternalTask>("task-state-changed", (event) => {
   });
 });
 
+type RunTaskArgs = {
+  taskId: string;
+  actionName: string;
+  actionData: string;
+  code: string;
+};
+
 export async function runCode(
   actionName: string,
   actionData: Record<string, any>,
@@ -172,8 +179,10 @@ export async function runCode(
 
     await invoke("run_task", {
       taskId: newTaskId,
+      actionName,
+      actionData: JSON.stringify(actionData),
       code: codeToRun,
-    });
+    } satisfies RunTaskArgs);
   } catch (error) {
     console.error("Failed to run code:", error);
     externalTaskStore.setState(newTaskId, {

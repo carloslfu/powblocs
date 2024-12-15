@@ -90,6 +90,18 @@ Pow.returnValue('Error: No code generated');`;
      */
     const actionsResult = await generateObject({
       model: this.smallModel,
+      prompt: `Generate actions for the block. An API for the visual layer to interact with the block.
+
+The block description is:
+<description>${markdownContent}</description>
+
+The block code is:
+<code>${code}</code>
+
+The block title is:
+<title>${trimmedTitle}</title>
+
+Output the actions in the following format.`,
       schema: z.object({
         actions: actionSchema,
       }),
