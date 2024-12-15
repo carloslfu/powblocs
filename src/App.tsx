@@ -46,6 +46,11 @@ interface ActionInput {
   value: string;
 }
 
+interface ActionDefinition {
+  name: string;
+  code: string;
+}
+
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="flex-1 flex items-center justify-center p-8 text-center">
@@ -258,16 +263,27 @@ function ActionInputs({
   actions,
   values,
   onChange,
+  onRun,
 }: {
   actions: ActionSchema;
   values: Record<string, string>;
   onChange: (values: Record<string, string>) => void;
+  onRun: (actionName: string) => void;
 }) {
   return (
     <div className="space-y-4">
       {actions.map((action, index) => (
-        <div key={index} className="space-y-2">
-          <Label htmlFor={action.name}>{action.name}</Label>
+        <div key={index} className="space-y-2 bg-gray-50 p-4 rounded-lg border">
+          <div className="flex justify-between items-center">
+            <Label htmlFor={action.name}>{action.name}</Label>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onRun(action.name)}
+            >
+              Run Action
+            </Button>
+          </div>
           <Input
             id={action.name}
             value={values[action.name] || ""}
@@ -353,9 +369,9 @@ function App() {
     }
   }, [claudeKey]);
 
-  const handleRunCode = async () => {
+  const handleRunCode = async (actionName: string = "main") => {
     try {
-      const taskId = await DenoEngine.runCode("main", actionValues, code);
+      const taskId = await DenoEngine.runCode(actionName, actionValues, code);
       setCurrentTaskId(taskId);
 
       spinnerTimeout.current = setTimeout(() => {
@@ -580,40 +596,17 @@ function App() {
             extensions={[javascript({ jsx: true })]}
             onChange={handleCodeChange}
           />
-          <ActionInputs
-            actions={actions}
-            values={actionValues}
-            onChange={(values) => setActionValues(values)}
-          />
-          <Button
-            onClick={handleRunCode}
-            className="mt-3"
-            disabled={
-              !engine ||
-              showRunningSpinner ||
-              (currentTask &&
-                currentTask.state === "running" &&
-                showRunningSpinner) ||
-              !code
-            }
-          >
-            {showRunningSpinner ||
-            (currentTask &&
-              currentTask.state === "running" &&
-              showRunningSpinner) ? (
-              <span className="flex items-center justify-center gap-2">
-                <FaSpinner className="animate-spin" />
-                Running...
-              </span>
-            ) : currentTask &&
-              currentTask.state === "waiting_for_permission" ? (
-              "Waiting for Permission"
-            ) : engine ? (
-              "Run Code"
-            ) : (
-              "Set Claude API Key to Run Code"
-            )}
-          </Button>
+          {actions.length > 0 && (
+            <div className="mt-4 mb-4">
+              <h3 className="text-sm font-medium mb-2">Actions</h3>
+              <ActionInputs
+                actions={actions}
+                values={actionValues}
+                onChange={(values) => setActionValues(values)}
+                onRun={handleRunCode}
+              />
+            </div>
+          )}
         </div>
       </div>
 

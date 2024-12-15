@@ -399,7 +399,14 @@ pub async fn run(
     println!("Writing code to {}", temp_code_path.display());
 
     let augmented_code = format!(
-        "globalThis.Pow.taskId = \"{task_id}\";\nglobalThis.Pow.actionName = \"{action_name}\";\nglobalThis.Pow.actionData = {action_data};\n\n{code}"
+        "globalThis.Pow.taskId = \"{task_id}\";
+globalThis.Pow.actionName = \"{action_name}\";
+globalThis.Pow.actionData = {action_data};
+
+{code}
+
+// default action
+throw new Error(`No action defined for {action_name}`)"
     );
 
     std::fs::write(&temp_code_path, augmented_code).unwrap();
