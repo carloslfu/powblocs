@@ -249,6 +249,14 @@ function TaskResults({
   );
 }
 
+// First update the ActionSchema type if not already defined
+type ActionInput = {
+  name: string;
+  type: "string" | "object";
+  default?: string | object;
+};
+
+// Update the ActionInputs component
 function ActionInputs({
   actions,
   values,
@@ -256,10 +264,30 @@ function ActionInputs({
   onRun,
 }: {
   actions: ActionSchema;
-  values: Record<string, string>;
-  onChange: (values: Record<string, string>) => void;
+  values: Record<string, any>;
+  onChange: (values: Record<string, any>) => void;
   onRun: (actionName: string) => void;
 }) {
+  const handleInputChange = (actionName: string, value: string) => {
+    try {
+      // Try to parse as JSON if it looks like an object
+      const trimmed = value.trim();
+      const newValue =
+        trimmed.startsWith("{") && trimmed.endsWith("}")
+          ? JSON.parse(value)
+          : value || "{}"; // Default to empty object if empty
+
+      const newValues = { ...values };
+      newValues[actionName] = newValue;
+      onChange(newValues);
+    } catch (e) {
+      // If JSON parsing fails, store as string
+      const newValues = { ...values };
+      newValues[actionName] = value;
+      onChange(newValues);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {actions.map((action, index) => (
@@ -276,13 +304,13 @@ function ActionInputs({
           </div>
           <Input
             id={action.name}
-            value={values[action.name] || ""}
-            onChange={(e) => {
-              const newValues = { ...values };
-              newValues[action.name] = e.target.value;
-              onChange(newValues);
-            }}
-            placeholder={`Enter ${action.name.toLowerCase()}`}
+            value={
+              typeof values[action.name] === "object"
+                ? JSON.stringify(values[action.name], null, 2)
+                : values[action.name] || "{}" // Default to empty object string
+            }
+            onChange={(e) => handleInputChange(action.name, e.target.value)}
+            placeholder={`Enter ${action.name.toLowerCase()} (object as JSON or string)`}
           />
         </div>
       ))}
@@ -328,7 +356,7 @@ function App() {
     return fuse.search(searchQuery).map((result) => result.item);
   }, [fuse, searchQuery, blocks]);
 
-  const [actionValues, setActionValues] = useState<Record<string, string>>({});
+  const [actionValues, setActionValues] = useState<Record<string, any>>({});
 
   useEffect(() => {
     // Load initial Claude API key
@@ -511,60 +539,66 @@ function App() {
   console.log("showRunningSpinner", showRunningSpinner);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Left Sidebar - Blocks List */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Scrollable blocks list */}
-        <div className="flex-1 p-4 overflow-y-auto">
-          <div className="mb-4 flex gap-2">
-            <Input
-              type="search"
-              placeholder="Search blocks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={handleCreateNewBlock}
-              title="Create new block"
-            >
-              <LuPlus className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {filteredBlocks.map((block) => (
-              <div
-                key={block.id}
-                className={`p-2 rounded cursor-pointer flex justify-between items-center ${
-                  selectedBlock?.id === block.id
-                    ? "bg-blue-100"
-                    : "hover:bg-gray-100"
-                }`}
-                onClick={() => handleSelectBlock(block)}
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
+      {/* Left Sidebar - Fixed width with flex column layout */}
+      <div className="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+        {/* Search and blocks list in scrollable container */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="p-4">
+            <div className="mb-4 flex gap-2">
+              <Input
+                type="search"
+                placeholder="Search blocks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={handleCreateNewBlock}
+                title="Create new block"
               >
-                <div className="truncate flex-1">
-                  <div className="text-sm font-medium">
-                    {block.title || "Untitled"}
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteBlock(block.id);
-                  }}
-                  className="text-red-500 hover:text-red-600 ml-2"
+                <LuPlus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Scrollable blocks list */}
+          <div className="flex-1 px-4 overflow-y-auto">
+            <div className="space-y-2">
+              {filteredBlocks.map((block) => (
+                <div
+                  key={block.id}
+                  className={`p-2 rounded cursor-pointer flex justify-between items-center ${
+                    selectedBlock?.id === block.id
+                      ? "bg-blue-100"
+                      : "hover:bg-gray-100"
+                  }`}
+                  onClick={() => handleSelectBlock(block)}
                 >
-                  <FaTrash size={14} />
-                </button>
-              </div>
-            ))}
+                  <div className="truncate flex-1">
+                    <div className="text-sm font-medium">
+                      {block.title || "Untitled"}
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteBlock(block.id);
+                    }}
+                    className="text-red-500 hover:text-red-600 ml-2"
+                  >
+                    <FaTrash size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Claude API Key fixed at bottom */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-gray-200 p-4 bg-white">
           <ClaudeAPIKey
             onClaudeAPIKeyChange={async (key: string) => {
               setClaudeKey(key);
@@ -573,75 +607,81 @@ function App() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col p-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="mb-4">
-            <TextEditor
-              onChange={handleDescriptionChange}
-              onEditorReady={(editor) => {
-                editorRef.current = editor;
-              }}
-              initialContent={selectedBlock?.description}
-              placeholder="Describe your block..."
-            />
-            <Button
-              onClick={handleGenerateCode}
-              className="mt-2"
-              disabled={!engine || !description || isGenerating}
-            >
-              {isGenerating ? (
-                <span className="flex items-center justify-center gap-2">
-                  <FaSpinner className="animate-spin" />
-                  Generating...
-                </span>
-              ) : (
-                "Generate Code"
-              )}
-            </Button>
-          </div>
-
-          <div className="mt-4">
-            <h3 className="text-sm font-medium mb-2">Backend Code</h3>
-            <CodeMirror
-              value={backendCode}
-              height="200px"
-              extensions={[javascript({ jsx: true })]}
-              onChange={handleBackendCodeChange}
-            />
-          </div>
-
-          <div className="mt-4">
-            <h3 className="text-sm font-medium mb-2">UI Code</h3>
-            <CodeMirror
-              value={uiCode}
-              height="200px"
-              extensions={[javascript({ jsx: true })]}
-              onChange={handleUiCodeChange}
-            />
-          </div>
-
-          {actions.length > 0 && (
-            <div className="mt-4 mb-4">
-              <h3 className="text-sm font-medium mb-2">Actions</h3>
-              <ActionInputs
-                actions={actions}
-                values={actionValues}
-                onChange={(values) => setActionValues(values)}
-                onRun={handleRunCode}
+      {/* Main Content - Fix vertical scroll */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="mb-4">
+              <TextEditor
+                onChange={handleDescriptionChange}
+                onEditorReady={(editor) => {
+                  editorRef.current = editor;
+                }}
+                initialContent={selectedBlock?.description}
+                placeholder="Describe your block..."
               />
+              <Button
+                onClick={handleGenerateCode}
+                className="mt-2"
+                disabled={!engine || !description || isGenerating}
+              >
+                {isGenerating ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <FaSpinner className="animate-spin" />
+                    Generating...
+                  </span>
+                ) : (
+                  "Generate Code"
+                )}
+              </Button>
             </div>
-          )}
+
+            <div className="mt-4 overflow-auto">
+              <h3 className="text-sm font-medium mb-2">Backend Code</h3>
+              <div className="overflow-auto">
+                <CodeMirror
+                  value={backendCode}
+                  height="200px"
+                  extensions={[javascript({ jsx: true })]}
+                  onChange={handleBackendCodeChange}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 overflow-auto">
+              <h3 className="text-sm font-medium mb-2">UI Code</h3>
+              <div className="overflow-auto">
+                <CodeMirror
+                  value={uiCode}
+                  height="200px"
+                  extensions={[javascript({ jsx: true })]}
+                  onChange={handleUiCodeChange}
+                />
+              </div>
+            </div>
+
+            {actions.length > 0 && (
+              <div className="mt-4 mb-4">
+                <h3 className="text-sm font-medium mb-2">Actions</h3>
+                <ActionInputs
+                  actions={actions}
+                  values={actionValues}
+                  onChange={(values) => setActionValues(values)}
+                  onRun={handleRunCode}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Right Sidebar - Results and Event Log */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
+      {/* Right Sidebar - Fix vertical scroll */}
+      <div className="w-96 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full overflow-hidden">
         <TaskResults
           task={currentTask}
           showRunningSpinner={showRunningSpinner}
         />
-        <div className="flex-1">
+        <div className="flex-1 overflow-hidden">
           <EventLog taskId={currentTask?.id} />
         </div>
       </div>
