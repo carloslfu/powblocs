@@ -10,7 +10,7 @@ Pow is a global object that contains the PowBlocs runtime functionality, here ar
 - Pow.registerAction(actionName: string, action: (data: Record<string, any>) => void): registers an action that can be called by the PowBlocs runtime. The runtime will call the actions from a UI with list of actions. These are the entry points for the user to interact with the block.
 - Pow.actionName: the name of the action that is currently being executed. This is set and internally used by the PowBlocs runtime.
 - Pow.actionData: the data of the action that is currently being executed. This is set and internally used by the PowBlocs runtime.
-- Pow.dirPath(name): returns the path the specified user directory. User directory names are: audio, cache, config, data, data_local, desktop, document, download, executable, font, home, picture, preference, public, runtime, template, video, config_local, state.
+- Pow.dirPath(name): returns the path to the specified user directory. User directory names are: audio, cache, config, data, data_local, desktop, document, download, executable, font, home, picture, preference, public, runtime, template, video, config_local, state.
 
 Here is an example:
 
