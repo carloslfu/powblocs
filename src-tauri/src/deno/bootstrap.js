@@ -4,10 +4,6 @@ function returnValue(value) {
   ops.custom_op_return_value(globalThis.Pow.taskId, JSON.stringify(value));
 }
 
-function documentDir() {
-  return ops.custom_op_document_dir();
-}
-
 function send(eventName, data) {
   ops.custom_op_send(globalThis.Pow.taskId, eventName, JSON.stringify(data));
 }
@@ -24,9 +20,13 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function dirPath(dirName) {
+  return ops.custom_op_dir_path(dirName);
+}
+
 globalThis.Pow = {
   returnValue,
-  documentDir,
+  dirPath,
   send,
   registerAction,
   sleep,

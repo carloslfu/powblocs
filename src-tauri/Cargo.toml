@@ -36,5 +36,5 @@ tauri-plugin-store = "2"
 deno_core = { version = "0.323.0" }
 deno_runtime = { version = "0.189.0" }
 deno_lib_ext = "=0.6.3"
-dirs = "5.0.1"
 crossbeam-channel = "0.5.13"
+dirs = "5.0.1"

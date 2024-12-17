@@ -245,8 +245,35 @@ fn custom_op_return_value(#[string] task_id: &str, #[string] value: &str) {
 
 #[op2]
 #[string]
-fn custom_op_document_dir() -> Option<String> {
-    dirs::document_dir().map(|path| path.to_string_lossy().to_string())
+fn custom_op_dir_path(#[string] api_name: &str) -> Result<String, anyhow::Error> {
+    let path = match api_name {
+        "audio" => dirs::audio_dir(),
+        "cache" => dirs::cache_dir(),
+        "config" => dirs::config_dir(),
+        "data" => dirs::data_dir(),
+        "data_local" => dirs::data_local_dir(),
+        "desktop" => dirs::desktop_dir(),
+        "document" => dirs::document_dir(),
+        "download" => dirs::download_dir(),
+        "executable" => dirs::executable_dir(),
+        "font" => dirs::font_dir(),
+        "home" => dirs::home_dir(),
+        "picture" => dirs::picture_dir(),
+        "preference" => dirs::preference_dir(),
+        "public" => dirs::public_dir(),
+        "runtime" => dirs::runtime_dir(),
+        "template" => dirs::template_dir(),
+        "video" => dirs::video_dir(),
+        "config_local" => dirs::config_local_dir(),
+        "state" => dirs::state_dir(),
+        _ => None,
+    };
+
+    if let Some(path) = path {
+        Ok(path.to_string_lossy().to_string())
+    } else {
+        Err(anyhow::anyhow!("Invalid directory name"))
+    }
 }
 
 #[op2(fast)]
@@ -261,7 +288,7 @@ fn custom_op_send(#[string] task_id: &str, #[string] event_name: &str, #[string]
 
 deno_runtime::deno_core::extension!(
   pow_extension,
-  ops = [custom_op_return_value, custom_op_document_dir, custom_op_send],
+  ops = [custom_op_return_value, custom_op_dir_path, custom_op_send],
   esm_entry_point = "ext:pow_extension/bootstrap.js",
   esm = [dir "src/deno", "bootstrap.js"]
 );
