@@ -318,7 +318,7 @@ function App() {
   const [claudeKey, setClaudeKey] = useState<string>("");
   const [engine, setEngine] = useState<PowBlocksEngine | null>(null);
   const [description, setDescription] = useState<JSONContent | undefined>();
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingSpec, setIsGeneratingSpec] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState<Block | undefined>();
   const [blocks, setBlocks] = useState<Block[]>([]);
 
@@ -350,6 +350,9 @@ function App() {
   }, [fuse, searchQuery, blocks]);
 
   const [actionValues, setActionValues] = useState<Record<string, any>>({});
+
+  const [specification, setSpecification] = useState<JSONContent | undefined>();
+  const [specEditorRef, setSpecEditorRef] = useState<Editor | null>(null);
 
   useEffect(() => {
     // Load initial Claude API key
@@ -409,13 +412,13 @@ function App() {
     }
   };
 
-  const handleGenerateCode = async () => {
+  const handleGenerateSpec = async () => {
     if (!engine || !description) {
       return;
     }
 
     try {
-      setIsGenerating(true);
+      setIsGeneratingSpec(true);
       const block = await engine.updateOrCreateBlockFromDescription(
         description,
         selectedBlock?.id
@@ -430,13 +433,14 @@ function App() {
     } catch (error) {
       console.error("Failed to generate code:", error);
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingSpec(false);
     }
   };
 
   const handleSelectBlock = (block: Block) => {
     setSelectedBlock(block);
     setDescription(block.description);
+    setSpecification(block.specification);
     setBackendCode(block.backendCode);
     setUiCode(block.uiCode);
     setActions(block.actions);
@@ -444,6 +448,9 @@ function App() {
     const htmlContent = block.description;
     if (editorRef.current) {
       editorRef.current.commands.setContent(htmlContent);
+    }
+    if (specEditorRef) {
+      specEditorRef.commands.setContent(block.specification);
     }
   };
 
@@ -489,6 +496,21 @@ function App() {
     }
   };
 
+  const handleSpecificationChange = async (newSpecification: JSONContent) => {
+    setSpecification(newSpecification);
+
+    if (engine && selectedBlock) {
+      const updatedBlock = {
+        ...selectedBlock,
+        specification: newSpecification,
+      };
+      await engine.store.updateBlock(updatedBlock.id, updatedBlock);
+
+      const blocks = await engine.store.listBlocks();
+      setBlocks(blocks);
+    }
+  };
+
   const handleDeleteBlock = async (blockId: string) => {
     if (!engine) return;
 
@@ -503,6 +525,7 @@ function App() {
         setUiCode("");
         setActions([]);
         setDescription(undefined);
+        setSpecification(undefined);
       }
     } catch (error) {
       console.error("Failed to delete block:", error);
@@ -514,10 +537,14 @@ function App() {
     setBackendCode("");
     setUiCode("");
     setDescription(undefined);
+    setSpecification(undefined);
     setActions([]);
     setActionValues({});
     if (editorRef.current) {
       editorRef.current.commands.setContent("");
+    }
+    if (specEditorRef) {
+      specEditorRef.commands.setContent("");
     }
   };
 
@@ -614,19 +641,30 @@ function App() {
                 placeholder="Describe your block..."
               />
               <Button
-                onClick={handleGenerateCode}
+                onClick={handleGenerateSpec}
                 className="mt-2"
-                disabled={!engine || !description || isGenerating}
+                disabled={!engine || !description || isGeneratingSpec}
               >
-                {isGenerating ? (
+                {isGeneratingSpec ? (
                   <span className="flex items-center justify-center gap-2">
                     <FaSpinner className="animate-spin" />
                     Generating...
                   </span>
                 ) : (
-                  "Generate Code"
+                  "Generate Specification"
                 )}
               </Button>
+              <div className="mt-4">
+                <h3 className="text-sm font-medium mb-2">Specification</h3>
+                <TextEditor
+                  onChange={handleSpecificationChange}
+                  onEditorReady={(editor) => {
+                    setSpecEditorRef(editor);
+                  }}
+                  initialContent={selectedBlock?.specification}
+                  placeholder="Describe the implementation details..."
+                />
+              </div>
             </div>
 
             <div className="mt-4 overflow-auto">
