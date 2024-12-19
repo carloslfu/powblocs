@@ -1,6 +1,91 @@
-export function generateFunctionBlockPrompt(description: string) {
-  return `You create blocks of well defined self-contained code in TypeScript that runs on Deno that fulfills the user's description:
+import { ActionSchema } from "./engine";
+
+export function generateSpecificationForBlockPrompt(description: string) {
+  return `Generate a high-level specification for the following block description:
 <description>${description}</description>
+
+Output the specification only, no intro, no explanation, no markdown, just the specification inside <specification></specification> tags.`;
+}
+
+export function generateActionsForBlockPrompt(specification: string) {
+  return `Generate actions for the block. An API for the visual layer to interact with the block. Follow the specification:
+<specification>${specification}</specification>
+
+Output the actions in the following format. Pay attention to the actions input schema (schema) in the specification. If the action doesn't need any input, set the schema to an empty object. If not, set the schema to the correct schema. For instance:
+
+The block should expose the following actions:
+
+<specification>
+...
+## Actions
+1. A "main" action that:
+   - Takes no input parameters
+   - Returns a string result
+   - Emits progress events with a number value
+   - Demonstrates basic functionality by showing a cowsay message and counting
+
+2. A "cowsay" action that:
+   - Takes a text string as input
+   - Returns the cowsay result as a string
+   - No events emitted
+
+3. A "count" action that:
+   - Takes a "to" number parameter
+   - No return value
+   - Emits progress events with the current count
+
+...
+</specification>
+
+<actions>
+{
+  "actions": [
+    {
+      "name": "main",
+      "description": "Main action that runs the default behavior",
+      "inputSchema": {},
+      "outputSchema": {
+        "result": "string"
+      },
+      "eventsSchema": {
+        "progress": {
+          "progress": "number"
+        }
+      }
+    },
+    {
+      "name": "cowsay",
+      "description": "Makes the cow say something",
+      "inputSchema": {
+        "text": "string"
+      },
+      "outputSchema": {
+        "result": "string"
+      },
+      "eventsSchema": {}
+    },
+    {
+      "name": "count",
+      "description": "Counts up to a number with progress events",
+      "inputSchema": {
+        "to": "number"
+      },
+      "outputSchema": {},
+      "eventsSchema": {
+        "progress": {
+          "progress": "number"
+        }
+      }
+    }
+  ]
+}
+</actions>
+`;
+}
+
+export function generateBackendCodeForBlockPrompt(specification: string) {
+  return `You create blocks of well defined self-contained code in TypeScript that runs on Deno that fulfills the user's specification:
+<specification>${specification}</specification>
 
 Pow is a global object that contains the PowBlocs runtime functionality, here are the methods:
 - Pow.send(eventName: string, data: Record<string, any>): sends an event to the PowBlocs runtime. Use for any output that needs streaming.
@@ -46,4 +131,96 @@ Pow.registerAction("count", async ({ to }: { to: number }) => {
 The generated code is re-executed every time the user runs an action.
 
 Generate the code only, no intro, no explanation, no markdown, just the code inside <code></code> tags.`;
+}
+
+export function generateUIForBlockPrompt(
+  specification: string,
+  title: string,
+  actions: ActionSchema
+) {
+  return `Generate the React UI code for the block. Follow the specification:
+<specification>${specification}</specification>
+
+The block title is:
+<title>${title}</title>
+
+The backend exposes the following actions:
+<actions>${JSON.stringify(actions, null, 2)}</actions>
+
+There are global hooks and functions that you can use to listen to events and state changes, and to fire actions:
+- Pow.useEvent(eventName, (data) => {
+  // do something
+})
+- const result = Pow.useActionResult(actionName, (data) => {
+  // do something
+})
+- Pow.runAction(actionName, input)
+
+Output UI like it is going to be rendered in react-runner. Output it in the following format:
+<uiCode>
+import { useState } from 'react';
+
+function App() {
+  const [text, setText] = useState('');
+  const [countTo, setCountTo] = useState(10);
+
+  // Get result from cowsay action
+  const result = Pow.useActionResult('cowsay');
+
+  // Track progress from count action
+  const [progress, setProgress] = useState(0);
+  Pow.useEvent('progress', (data) => {
+    setProgress(data.progress);
+  });
+
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">{Pow.title}</h2>
+
+      <div className="space-y-4">
+        <div className="border p-4 rounded">
+          <h3 className="font-bold mb-2">Cowsay</h3>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={text}
+              onChange={e => setText(e.target.value)}
+              className="border p-2 rounded"
+              placeholder="Enter text for cow"
+            />
+            <button
+              onClick={() => Pow.runAction('cowsay', { text })}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Make cow say
+            </button>
+          </div>
+          {result && <pre className="mt-2 font-mono">{result.result}</pre>}
+        </div>
+
+        <div className="border p-4 rounded">
+          <h3 className="font-bold mb-2">Counter</h3>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={countTo}
+              onChange={e => setCountTo(parseInt(e.target.value))}
+              className="border p-2 rounded"
+            />
+            <button
+              onClick={() => Pow.runAction('count', { to: countTo })}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Start counting
+            </button>
+          </div>
+          <div className="mt-2">
+            Progress: {progress}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+</uiCode>`;
 }

@@ -8,9 +8,14 @@ export type Block = {
    */
   title?: string;
   /**
-   * Natural language description of the block
+   * Natural language description of the block.
    */
   description: JSONContent;
+
+  /**
+   * High-level implementation specification of the block, in natural language
+   */
+  specification: JSONContent;
 
   /**
    * The backend code of the block
