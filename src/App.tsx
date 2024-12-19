@@ -423,8 +423,7 @@ function App() {
         description,
         selectedBlock?.id
       );
-      setBackendCode(block.backendCode);
-      setUiCode(block.uiCode);
+      setSpecification(block.specification);
       setActions(block.actions);
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
