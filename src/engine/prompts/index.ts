@@ -1,4 +1,5 @@
-import { ActionSchema } from "./engine";
+import { ActionSchema } from "../engine";
+import { pngToIcoPrompt } from "./backendLibPrompts";
 
 export function generateTitleForBlockPrompt(description: string) {
   return `Generate a short, descriptive title (3-5 words) for this code block based on this description:
@@ -30,8 +31,6 @@ export function generateActionsForBlockPrompt(specification: string) {
 <specification>${specification}</specification>
 
 Output the backend actions in the following format. Pay attention to the actions input schema (schema) in the specification. If the action doesn't need any input, set the schema to an empty object. If not, set the schema to the correct schema. For instance:
-
-The block should expose the following actions:
 
 <specification>
 ...
@@ -98,7 +97,8 @@ The block should expose the following actions:
   ]
 }
 </actions>
-`;
+
+Maintain the actions to the minimal needed to make fulfill the specification and to be useful.`;
 }
 
 export function generateBackendCodeForBlockPrompt(
@@ -108,13 +108,16 @@ export function generateBackendCodeForBlockPrompt(
   return `You create blocks of well defined self-contained code in TypeScript that runs on Deno that fulfills the user's specification:
 <specification>${specification}</specification>
 
+${pngToIcoPrompt()}
+
+## Backend actions
+
 The backend should expose the following actions:
 <actions>${JSON.stringify(actions, null, 2)}</actions>
 
 Pow is a global object that contains the PowBlocs runtime functionality, here are the methods:
 - Pow.send(eventName: string, data: Record<string, any>): sends an event to the PowBlocs runtime. Use for any output that needs streaming.
 - Pow.returnValue(result: Record<string, any>): returns the result to the PowBlocs runtime. Use it for any output that doesn't need streaming, the final result.
-- Pow.sleep(ms: number): sleeps for the given number of milliseconds.
 - Pow.taskId: the id of the current task, it is set by the PowBlocs runtime. This is internally set and used by the PowBlocs runtime to identify the task.
 - Pow.registerAction(actionName: string, action: (data: Record<string, any>) => void): registers an action that can be called by the PowBlocs runtime. The runtime will call the actions from a UI with list of actions. These are the entry points for the user to interact with the block.
 - Pow.actionName: the name of the action that is currently being executed. This is set and internally used by the PowBlocs runtime.
@@ -146,11 +149,11 @@ Pow.registerAction("cowsay", async ({ text }: { text: string }) => {
 
 Pow.registerAction("count", async ({ to }: { to: number }) => {
   for (let i = 0; i < to; i++) {
-    Pow.sleep(1000);
     Pow.send("progress", { progress: i });
   }
 });
 </code>
+
 
 Implement the complete code. DO NOT simulate doing or add placeholder comments. You are expected to implement the full functionality.
 
