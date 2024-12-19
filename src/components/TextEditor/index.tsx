@@ -61,7 +61,7 @@ export function TextEditor({
   return (
     <EditorContent
       editor={editor}
-      className="tiptap-editor border border-gray-300 p-2 rounded-md focus-within:border-gray-400 prose"
+      className="tiptap-editor border border-gray-300 px-6 py-4 rounded-md focus-within:border-gray-400 prose"
       autoComplete="off"
       autoCorrect="off"
       autoCapitalize="off"
