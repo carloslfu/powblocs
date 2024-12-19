@@ -319,6 +319,8 @@ function App() {
   const [engine, setEngine] = useState<PowBlocksEngine | null>(null);
   const [description, setDescription] = useState<JSONContent | undefined>();
   const [isGeneratingSpec, setIsGeneratingSpec] = useState(false);
+  const [isGeneratingBackendAndActions, setIsGeneratingBackendAndActions] =
+    useState(false);
   const [selectedBlock, setSelectedBlock] = useState<Block | undefined>();
   const [blocks, setBlocks] = useState<Block[]>([]);
 
@@ -436,6 +438,25 @@ function App() {
       console.error("Failed to generate code:", error);
     } finally {
       setIsGeneratingSpec(false);
+    }
+  };
+
+  const handleGenerateBackendAndActions = async () => {
+    if (!engine || !selectedBlock?.id) {
+      return;
+    }
+
+    try {
+      setIsGeneratingBackendAndActions(true);
+      const block = await engine.generateBackendCodeForBlock(selectedBlock?.id);
+
+      setSelectedBlock(block);
+      setActions(block.actions);
+      setBackendCode(block.backendCode);
+    } catch (error) {
+      console.error("Failed to generate backend and actions:", error);
+    } finally {
+      setIsGeneratingBackendAndActions(false);
     }
   };
 
@@ -651,6 +672,7 @@ function App() {
                   "Generate Specification"
                 )}
               </Button>
+
               <div className="mt-4">
                 <h3 className="text-sm font-medium mb-2">Specification</h3>
                 <TextEditor
@@ -662,7 +684,36 @@ function App() {
                   placeholder="Describe the implementation details..."
                 />
               </div>
+
+              <Button
+                onClick={handleGenerateBackendAndActions}
+                className="mt-2"
+                disabled={
+                  !engine || !description || isGeneratingBackendAndActions
+                }
+              >
+                {isGeneratingBackendAndActions ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <FaSpinner className="animate-spin" />
+                    Generating...
+                  </span>
+                ) : (
+                  "Generate Backend and Actions"
+                )}
+              </Button>
             </div>
+
+            {actions.length > 0 && (
+              <div className="mt-4 mb-4">
+                <h3 className="text-sm font-medium mb-2">Actions</h3>
+                <ActionInputs
+                  actions={actions}
+                  values={actionValues}
+                  onChange={(values) => setActionValues(values)}
+                  onRun={handleRunCode}
+                />
+              </div>
+            )}
 
             <div className="mt-4 overflow-auto">
               <h3 className="text-sm font-medium mb-2">Backend Code</h3>
@@ -687,18 +738,6 @@ function App() {
                 />
               </div>
             </div>
-
-            {actions.length > 0 && (
-              <div className="mt-4 mb-4">
-                <h3 className="text-sm font-medium mb-2">Actions</h3>
-                <ActionInputs
-                  actions={actions}
-                  values={actionValues}
-                  onChange={(values) => setActionValues(values)}
-                  onRun={handleRunCode}
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>

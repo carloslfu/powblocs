@@ -17,9 +17,11 @@ The system runs on a platform that has the following capabilities:
 - It has a storage system that allows the system to store data which is part of the backend. It uses SQLite.
 - It has a UI that allows the user to interact with the system. It uses React 18.
 
-The apps the system creates are local to the user's machine and have desktop capabilities (native) though Deno and the PowBlocs platform (desktop app they run on). These apps don't need authentication.
+The tools the system creates are local to the user's machine and have desktop capabilities (native) though Deno and the PowBlocs platform (desktop app they run on). These tools are minimal and don't need authentication.
 
 The specification should be high-level and should not include any code. It should be a list of features and capabilities that the system should have, with enough detail but geared towards a non-technical audience. Use markdown formatting.
+
+Keep the tool's capabilities minimal and simple. Don't include any complex features, just the basics. The tool should be single purposed and should be easy to understand and use. Single functionality, highly focused and functional is better.
 `;
 }
 
@@ -99,9 +101,15 @@ The block should expose the following actions:
 `;
 }
 
-export function generateBackendCodeForBlockPrompt(specification: string) {
+export function generateBackendCodeForBlockPrompt(
+  specification: string,
+  actions: ActionSchema
+) {
   return `You create blocks of well defined self-contained code in TypeScript that runs on Deno that fulfills the user's specification:
 <specification>${specification}</specification>
+
+The backend should expose the following actions:
+<actions>${JSON.stringify(actions, null, 2)}</actions>
 
 Pow is a global object that contains the PowBlocs runtime functionality, here are the methods:
 - Pow.send(eventName: string, data: Record<string, any>): sends an event to the PowBlocs runtime. Use for any output that needs streaming.

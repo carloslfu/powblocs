@@ -100,6 +100,57 @@ export class PowBlocksEngine {
 
     let trimmedTitle = title?.trim() || "Untitled";
 
+    const parsed = this.parser.parse(specification);
+    const specificationHTML = this.renderer.render(parsed);
+
+    const specificationJSON = generateJSON(
+      specificationHTML,
+      textEditorExtensions()
+    );
+
+    if (blockId) {
+      await this.store.updateBlock(blockId, {
+        description,
+        specification: specificationJSON,
+        backendCode: "",
+        title: trimmedTitle,
+        uiCode: "",
+      });
+
+      return {
+        id: blockId,
+        description,
+        specification: specificationJSON,
+        backendCode: "",
+        title: trimmedTitle,
+        actions: [],
+        uiCode: "",
+      } satisfies Block;
+    }
+
+    return this.store.createBlock({
+      description,
+      specification: specificationJSON,
+      backendCode: "",
+      title: trimmedTitle,
+      actions: [],
+      uiCode: "",
+    });
+  }
+
+  async generateBackendCodeForBlock(blockId: string): Promise<Block> {
+    const block = await this.store.getBlock(blockId);
+
+    if (!block) {
+      throw new Error("Block not found");
+    }
+
+    const htmlContent = generateHTML(
+      block.specification,
+      textEditorExtensions()
+    );
+    const specification = this.turndownService.turndown(htmlContent);
+
     /**
      * Generate actions for the block. An API for the visual layer to interact with the block.
      */
@@ -114,72 +165,31 @@ export class PowBlocksEngine {
 
     const actions = actionsResult.object.actions;
 
-    const parsed = this.parser.parse(specification);
-    const specificationHTML = this.renderer.render(parsed);
-
-    const specificationJSON = generateJSON(
-      specificationHTML,
-      textEditorExtensions()
-    );
-
-    console.log("specification", specification);
-    console.log("specificationHTML", specificationHTML);
-    console.log("specificationJSON", specificationJSON);
-
-    console.log("actions", actions);
-
-    if (blockId) {
-      await this.store.updateBlock(blockId, {
-        description,
-        specification: specificationJSON,
-        backendCode: "",
-        title: trimmedTitle,
-        actions,
-        uiCode: "",
-      });
-
-      return {
-        id: blockId,
-        description,
-        specification: specificationJSON,
-        backendCode: "",
-        title: trimmedTitle,
-        actions,
-        uiCode: "",
-      } satisfies Block;
-    }
-
-    return this.store.createBlock({
-      description,
-      specification: specificationJSON,
-      backendCode: "",
-      title: trimmedTitle,
-      actions,
-      uiCode: "",
-    });
-  }
-
-  async generateBackendCodeForBlock(blockId: string) {
-    const block = await this.store.getBlock(blockId);
-
-    if (!block) {
-      throw new Error("Block not found");
-    }
-
-    const htmlContent = generateHTML(
-      block.specification,
-      textEditorExtensions()
-    );
-    const specification = this.turndownService.turndown(htmlContent);
-
     const backendCodeResponse = await generateText({
       model: this.model,
       temperature: 0,
       maxTokens: 8192,
-      prompt: generateBackendCodeForBlockPrompt(specification),
+      prompt: generateBackendCodeForBlockPrompt(specification, actions), // out is inside <code> tags
     });
 
-    return backendCodeResponse.text;
+    const backendCode = backendCodeResponse.text.match(
+      /<code>([\s\S]*?)<\/code>/
+    )?.[1];
+
+    if (!backendCode) {
+      throw new Error("No backend code generated");
+    }
+
+    await this.store.updateBlock(blockId, {
+      backendCode,
+      actions,
+    });
+
+    return {
+      ...block,
+      backendCode,
+      actions,
+    };
   }
 
   async generateUIForBlock(blockId: string) {
