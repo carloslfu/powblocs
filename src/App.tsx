@@ -30,6 +30,7 @@ import * as DenoEngine from "@/engine/deno";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
+import { Textarea } from "./components/ui/textarea";
 
 /**
  * Delay before showing spinner
@@ -263,12 +264,13 @@ function ActionInputs({
 }) {
   const handleInputChange = (actionName: string, value: string) => {
     try {
-      // Try to parse as JSON if it looks like an object
+      // Try to parse as JSON if it looks like an object or array
       const trimmed = value.trim();
       const newValue =
-        trimmed.startsWith("{") && trimmed.endsWith("}")
+        (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+        (trimmed.startsWith("[") && trimmed.endsWith("]"))
           ? JSON.parse(value)
-          : value || "{}"; // Default to empty object if empty
+          : value; // Keep as string if not JSON
 
       const newValues = { ...values };
       newValues[actionName] = newValue;
@@ -295,15 +297,15 @@ function ActionInputs({
               Run Action
             </Button>
           </div>
-          <Input
+          <Textarea
             id={action.name}
             value={
               typeof values[action.name] === "object"
                 ? JSON.stringify(values[action.name], null, 2)
-                : values[action.name] || "{}" // Default to empty object string
+                : values[action.name] || "" // Default to empty string instead of "{}"
             }
             onChange={(e) => handleInputChange(action.name, e.target.value)}
-            placeholder={`Enter ${action.name.toLowerCase()} (object as JSON or string)`}
+            placeholder={`Enter ${action.name.toLowerCase()} parameters`}
           />
         </div>
       ))}
@@ -386,10 +388,11 @@ function App() {
   }, [claudeKey]);
 
   const handleRunCode = async (actionName: string = "main") => {
+    console.log("actionValues", actionValues[actionName]);
     try {
       const taskId = await DenoEngine.runCode(
         actionName,
-        actionValues,
+        actionValues[actionName],
         backendCode
       );
       setCurrentTaskId(taskId);
@@ -429,7 +432,6 @@ function App() {
         specEditorRef.commands.setContent(block.specification);
       }
 
-      setActions(block.actions);
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
 
@@ -452,6 +454,12 @@ function App() {
 
       setSelectedBlock(block);
       setActions(block.actions);
+      setActionValues(
+        block.actions.reduce((acc, action) => {
+          acc[action.name] = action.inputExample;
+          return acc;
+        }, {} as Record<string, any>)
+      );
       setBackendCode(block.backendCode);
     } catch (error) {
       console.error("Failed to generate backend and actions:", error);
@@ -466,7 +474,12 @@ function App() {
     setBackendCode(block.backendCode);
     setUiCode(block.uiCode);
     setActions(block.actions);
-    setActionValues({});
+    setActionValues(
+      block.actions.reduce((acc, action) => {
+        acc[action.name] = action.inputExample;
+        return acc;
+      }, {} as Record<string, any>)
+    );
     const htmlContent = block.description;
     if (editorRef.current) {
       editorRef.current.commands.setContent(htmlContent);

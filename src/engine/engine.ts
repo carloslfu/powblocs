@@ -24,12 +24,21 @@ export const actionSchema = z.array(
     inputSchema: z
       .record(z.any())
       .describe("The input schema that the action accepts"),
+    inputExample: z
+      .record(z.any())
+      .describe("An example of the input that the action accepts"),
     outputSchema: z
       .record(z.any())
       .describe("The output schema that the action returns"),
+    outputExample: z
+      .record(z.any())
+      .describe("An example of the output that the action returns"),
     eventsSchema: z
       .record(z.string(), z.any())
       .describe("The events schema that the action emits"),
+    eventsExample: z
+      .record(z.string(), z.any())
+      .describe("An example of the events that the action emits"),
   })
 );
 
