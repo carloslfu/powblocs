@@ -19,6 +19,12 @@ import {
 import { LuBan, LuPlus } from "react-icons/lu";
 import { Editor, JSONContent } from "@tiptap/react";
 import Fuse from "fuse.js";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronRight } from "lucide-react";
 
 import { getClaudeAPIKey, setClaudeAPIKey } from "./localStore";
 import { ActionSchema, PowBlocksEngine } from "./engine/engine";
@@ -687,15 +693,31 @@ function App() {
               </Button>
 
               <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">Specification</h3>
-                <TextEditor
-                  onChange={handleSpecificationChange}
-                  onEditorReady={(editor) => {
-                    setSpecEditorRef(editor);
-                  }}
-                  initialContent={selectedBlock?.specification}
-                  placeholder="Describe the implementation details..."
-                />
+                <Collapsible defaultOpen>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium">Specification</h3>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="hover:bg-transparent p-0 data-[state=open]:rotate-90 transition-transform duration-200"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                        <span className="sr-only">Toggle specification</span>
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent className="mt-2">
+                    <TextEditor
+                      onChange={handleSpecificationChange}
+                      onEditorReady={(editor) => {
+                        setSpecEditorRef(editor);
+                      }}
+                      initialContent={selectedBlock?.specification}
+                      placeholder="Describe the implementation details..."
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               <Button
