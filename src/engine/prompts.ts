@@ -152,8 +152,6 @@ Pow.registerAction("count", async ({ to }: { to: number }) => {
 });
 </code>
 
-The generated code is re-executed every time the user runs an action.
-
 Implement the complete code. DO NOT simulate doing or add placeholder comments. You are expected to implement the full functionality.
 
 Use the <thinking></thinking> tag to think about the implementation before you generate it.
