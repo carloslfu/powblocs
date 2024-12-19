@@ -249,13 +249,6 @@ function TaskResults({
   );
 }
 
-// First update the ActionSchema type if not already defined
-type ActionInput = {
-  name: string;
-  type: "string" | "object";
-  default?: string | object;
-};
-
 // Update the ActionInputs component
 function ActionInputs({
   actions,
@@ -423,7 +416,7 @@ function App() {
 
     try {
       setIsGenerating(true);
-      const block = await engine.updateOrCreateBlock(
+      const block = await engine.updateOrCreateBlockFromDescription(
         description,
         selectedBlock?.id
       );

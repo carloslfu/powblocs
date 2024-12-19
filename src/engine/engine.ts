@@ -5,6 +5,7 @@ import { generateObject, generateText, LanguageModelV1 } from "ai";
 import { fetch } from "@tauri-apps/plugin-http";
 import TurndownService from "turndown";
 import { z } from "zod";
+import * as commonmark from "commonmark";
 
 import { APIKeys, CodeStore } from "./model";
 import { Block } from "./model";
@@ -40,6 +41,9 @@ export class PowBlocksEngine {
 
   private model: LanguageModelV1;
   private smallModel: LanguageModelV1;
+
+  private parser = new commonmark.Parser();
+  private renderer = new commonmark.HtmlRenderer();
 
   constructor({ store, apiKeys }: { store: CodeStore; apiKeys: APIKeys }) {
     this.store = store;
@@ -116,7 +120,9 @@ Output the title only. Output it in the following format:
 
     const actions = actionsResult.object.actions;
 
-    const specificationHTML = specification; // add commonmark to get the html of
+    const parsed = this.parser.parse(specification);
+    const specificationHTML = this.renderer.render(parsed);
+
     const specificationJSON = generateJSON(
       specificationHTML,
       textEditorExtensions
