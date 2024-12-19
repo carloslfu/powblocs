@@ -131,8 +131,8 @@ Pow.registerAction("main", async () => {
 
   // count to 100 and wait 1 second between each number
   for (let i = 0; i < 100; i++) {
+    // perform the action
     Pow.send("progress", { progress: i });
-    await Pow.sleep(1000);
   }
 
   Pow.returnValue({ result });
@@ -146,15 +146,19 @@ Pow.registerAction("cowsay", async ({ text }: { text: string }) => {
 
 Pow.registerAction("count", async ({ to }: { to: number }) => {
   for (let i = 0; i < to; i++) {
+    Pow.sleep(1000);
     Pow.send("progress", { progress: i });
-    await Pow.sleep(1000);
   }
 });
 </code>
 
 The generated code is re-executed every time the user runs an action.
 
-Generate the code only, no intro, no explanation, no markdown, just the code inside <code></code> tags.`;
+Implement the complete code. DO NOT simulate doing or add placeholder comments. You are expected to implement the full functionality.
+
+Use the <thinking></thinking> tag to think about the implementation before you generate it.
+
+Generate the code inside <code></code> tags.`;
 }
 
 export function generateUIForBlockPrompt(
