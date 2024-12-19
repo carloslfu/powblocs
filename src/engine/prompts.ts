@@ -1,5 +1,13 @@
 import { ActionSchema } from "./engine";
 
+export function generateTitleForBlockPrompt(description: string) {
+  return `Generate a short, descriptive title (3-5 words) for this code block based on this description:
+<description>${description}</description>
+
+Output the title only. Output it in the following format:
+<title>Title</title>`;
+}
+
 export function generateSpecificationForBlockPrompt(description: string) {
   return `You are an expert technical product manager. Generate a high-level specification for a system that fulfills the following block description:
 <description>${description}</description>
@@ -16,10 +24,10 @@ The specification should be high-level and should not include any code. It shoul
 }
 
 export function generateActionsForBlockPrompt(specification: string) {
-  return `Generate actions for the block. An API for the visual layer to interact with the block. Follow the specification:
+  return `You are an expert software engineer. Generate backend actions for the block based on the specification. Backend actions are the functions that the block can perform, backed by backend code. An API for the visual layer to interact with the backend. Follow the specification:
 <specification>${specification}</specification>
 
-Output the actions in the following format. Pay attention to the actions input schema (schema) in the specification. If the action doesn't need any input, set the schema to an empty object. If not, set the schema to the correct schema. For instance:
+Output the backend actions in the following format. Pay attention to the actions input schema (schema) in the specification. If the action doesn't need any input, set the schema to an empty object. If not, set the schema to the correct schema. For instance:
 
 The block should expose the following actions:
 

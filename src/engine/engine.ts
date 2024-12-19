@@ -14,6 +14,7 @@ import {
   generateSpecificationForBlockPrompt,
   generateBackendCodeForBlockPrompt,
   generateUIForBlockPrompt,
+  generateTitleForBlockPrompt,
 } from "./prompts";
 
 export const actionSchema = z.array(
@@ -85,11 +86,7 @@ export class PowBlocksEngine {
         model: this.model,
         temperature: 0,
         maxTokens: 100,
-        prompt: `Generate a short, descriptive title (3-5 words) for this code block based on this description:
-<description>${descriptionInMarkdown}</description>
-
-Output the title only. Output it in the following format:
-<title>Title</title>`,
+        prompt: generateTitleForBlockPrompt(descriptionInMarkdown),
       }),
     ]);
 

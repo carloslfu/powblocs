@@ -23,7 +23,7 @@ export type Block = {
   backendCode: string;
 
   /**
-   * The actions of the block in JSON schema format
+   * The backend actions of the block in JSON schema format. Actions are the functions that the block can perform, backed by backend code.
    */
   actions: ActionSchema;
 
