@@ -351,7 +351,6 @@ function App() {
 
   const [actionValues, setActionValues] = useState<Record<string, any>>({});
 
-  const [specification, setSpecification] = useState<JSONContent | undefined>();
   const [specEditorRef, setSpecEditorRef] = useState<Editor | null>(null);
 
   useEffect(() => {
@@ -423,7 +422,11 @@ function App() {
         description,
         selectedBlock?.id
       );
-      setSpecification(block.specification);
+
+      if (specEditorRef) {
+        specEditorRef.commands.setContent(block.specification);
+      }
+
       setActions(block.actions);
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
@@ -439,7 +442,6 @@ function App() {
   const handleSelectBlock = (block: Block) => {
     setSelectedBlock(block);
     setDescription(block.description);
-    setSpecification(block.specification);
     setBackendCode(block.backendCode);
     setUiCode(block.uiCode);
     setActions(block.actions);
@@ -496,8 +498,6 @@ function App() {
   };
 
   const handleSpecificationChange = async (newSpecification: JSONContent) => {
-    setSpecification(newSpecification);
-
     if (engine && selectedBlock) {
       const updatedBlock = {
         ...selectedBlock,
@@ -524,7 +524,6 @@ function App() {
         setUiCode("");
         setActions([]);
         setDescription(undefined);
-        setSpecification(undefined);
       }
     } catch (error) {
       console.error("Failed to delete block:", error);
@@ -536,7 +535,6 @@ function App() {
     setBackendCode("");
     setUiCode("");
     setDescription(undefined);
-    setSpecification(undefined);
     setActions([]);
     setActionValues({});
     if (editorRef.current) {

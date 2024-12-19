@@ -1,10 +1,18 @@
 import { ActionSchema } from "./engine";
 
 export function generateSpecificationForBlockPrompt(description: string) {
-  return `Generate a high-level specification for the following block description:
+  return `You are an expert technical product manager. Generate a high-level specification for a system that fulfills the following block description:
 <description>${description}</description>
 
-Output the specification only, no intro, no explanation, no markdown, just the specification inside <specification></specification> tags.`;
+The system runs on a platform that has the following capabilities:
+- It has a backend that allows the system to run code. With Deno 2. It can attend to actions, return values and emit events.
+- It has a storage system that allows the system to store data which is part of the backend. It uses SQLite.
+- It has a UI that allows the user to interact with the system. It uses React 18.
+
+The apps the system creates are local to the user's machine and have desktop capabilities (native) though Deno and the PowBlocs platform (desktop app they run on). These apps don't need authentication.
+
+The specification should be high-level and should not include any code. It should be a list of features and capabilities that the system should have, with enough detail but geared towards a non-technical audience. Use markdown formatting.
+`;
 }
 
 export function generateActionsForBlockPrompt(specification: string) {

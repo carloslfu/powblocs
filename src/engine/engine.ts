@@ -71,7 +71,7 @@ export class PowBlocksEngine {
     description: JSONContent,
     blockId?: string
   ): Promise<Block> {
-    const htmlContent = generateHTML(description, textEditorExtensions);
+    const htmlContent = generateHTML(description, textEditorExtensions());
     const descriptionInMarkdown = this.turndownService.turndown(htmlContent);
 
     const [specificationResponse, titleResponse] = await Promise.all([
@@ -93,10 +93,7 @@ Output the title only. Output it in the following format:
       }),
     ]);
 
-    // extract the code from the text
-    let specification = specificationResponse.text.match(
-      /<specification>([\s\S]*?)<\/specification>/
-    )?.[1];
+    let specification = specificationResponse.text;
 
     if (!specification) {
       specification = `Error: No specification generated`;
@@ -125,8 +122,14 @@ Output the title only. Output it in the following format:
 
     const specificationJSON = generateJSON(
       specificationHTML,
-      textEditorExtensions
+      textEditorExtensions()
     );
+
+    console.log("specification", specification);
+    console.log("specificationHTML", specificationHTML);
+    console.log("specificationJSON", specificationJSON);
+
+    console.log("actions", actions);
 
     if (blockId) {
       await this.store.updateBlock(blockId, {
@@ -166,7 +169,10 @@ Output the title only. Output it in the following format:
       throw new Error("Block not found");
     }
 
-    const htmlContent = generateHTML(block.specification, textEditorExtensions);
+    const htmlContent = generateHTML(
+      block.specification,
+      textEditorExtensions()
+    );
     const specification = this.turndownService.turndown(htmlContent);
 
     const backendCodeResponse = await generateText({
@@ -188,7 +194,7 @@ Output the title only. Output it in the following format:
 
     const specificationHTML = generateHTML(
       block.specification,
-      textEditorExtensions
+      textEditorExtensions()
     );
 
     const specification = this.turndownService.turndown(specificationHTML);

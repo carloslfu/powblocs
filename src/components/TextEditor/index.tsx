@@ -16,7 +16,7 @@ type TextEditorProps = {
   placeholder?: string;
 };
 
-export const textEditorExtensions = [
+export const textEditorExtensions = () => [
   Color.configure({ types: [TextStyle.name, ListItem.name] }),
   TextStyle,
   StarterKit.configure({
@@ -39,7 +39,7 @@ export function TextEditor({
 }: TextEditorProps) {
   const editor = useEditor({
     extensions: [
-      ...textEditorExtensions,
+      ...textEditorExtensions(),
       Placeholder.configure({ placeholder }),
     ],
     content: initialContent,
@@ -61,7 +61,7 @@ export function TextEditor({
   return (
     <EditorContent
       editor={editor}
-      className="tiptap-editor border border-gray-300 p-2 rounded-md focus-within:border-gray-400"
+      className="tiptap-editor border border-gray-300 p-2 rounded-md focus-within:border-gray-400 prose"
       autoComplete="off"
       autoCorrect="off"
       autoCapitalize="off"
