@@ -1,11 +1,11 @@
 const { ops } = globalThis.Deno.core;
 
 function returnValue(value) {
-  ops.custom_op_return_value(globalThis.Pow.taskId, JSON.stringify(value));
+  ops.custom_op_return_value(globalThis.Pow._taskId, JSON.stringify(value));
 }
 
 function send(eventName, data) {
-  ops.custom_op_send(globalThis.Pow.taskId, eventName, JSON.stringify(data));
+  ops.custom_op_send(globalThis.Pow._taskId, eventName, JSON.stringify(data));
 }
 
 const actionMap = {};
@@ -29,8 +29,8 @@ function callAction(actionName, input) {
 }
 
 function _evaluateActions() {
-  if (actionMap[globalThis.Pow.actionName]) {
-    actionMap[globalThis.Pow.actionName](globalThis.Pow.actionData);
+  if (actionMap[globalThis.Pow._actionName]) {
+    actionMap[globalThis.Pow._actionName](globalThis.Pow._actionData);
 
     globalThis.Pow._actionHandled = true;
   }
