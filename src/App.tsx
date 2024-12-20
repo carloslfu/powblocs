@@ -496,14 +496,16 @@ function App() {
   };
 
   const handleBackendCodeChange = async (newCode: string) => {
+    console.log("newCode", newCode);
     setBackendCode(newCode);
 
     if (engine && selectedBlock) {
       const updatedBlock = {
         ...selectedBlock,
-        code: newCode,
+        backendCode: newCode,
       };
       await engine.store.updateBlock(updatedBlock.id, updatedBlock);
+      setSelectedBlock(updatedBlock);
 
       const blocks = await engine.store.listBlocks();
       setBlocks(blocks);
@@ -519,6 +521,10 @@ function App() {
         uiCode: newCode,
       };
       await engine.store.updateBlock(updatedBlock.id, updatedBlock);
+      setSelectedBlock(updatedBlock);
+
+      const blocks = await engine.store.listBlocks();
+      setBlocks(blocks);
     }
   };
 

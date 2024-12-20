@@ -21,3 +21,39 @@ const icoBuffer = await pngToIco(inputPath);
 await Deno.writeFile(outputPath, icoBuffer);
 \`\`\``;
 }
+
+export function pngEncoderDecoderPrompt() {
+  return `## Encode and decode a PNG file
+
+To encode and/or decode a PNG file use the "npm:pngjs" library. Here is an example of how to use it to parse a PNG file:
+
+\`\`\`ts
+import { PNG } from "npm:pngjs";
+
+const png = new PNG({
+  filterType: 4,
+});
+
+png.parse(inputPath);
+
+// You can now access the pixels array and dimensions
+const { width, height } = png;
+const pixels = png.data;
+\`\`\``;
+}
+
+export function checkingFileIsPngPrompt() {
+  return `## Check if a file is a PNG
+
+To check if a file is a PNG use the "npm:is-png" library. Here is an example of how to use it:
+
+\`\`\`ts
+import { readChunk } from "npm:read-chunk";
+import isPng from "npm:is-png";
+
+const buffer = await readChunk('unicorn.png', {length: 8});
+
+isPng(buffer);
+//=> true
+\`\`\``;
+}

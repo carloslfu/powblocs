@@ -7,7 +7,6 @@ Prompt: create a tool to convert png into ico
 ```json
 {
   "inputPath": "/Users/carlosgalarza/Downloads/aibuilderbuddy.png",
-  "outputDirectory": "/Users/carlosgalarza/Downloads/aibuilderbuddyico",
-  "sizes": [16, 32, 48]
+  "outputPath": "/Users/carlosgalarza/Downloads/aibuilderbuddyico/aibuilderbuddy.ico"
 }
 ```

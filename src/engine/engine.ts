@@ -164,7 +164,8 @@ export class PowBlocksEngine {
      * Generate actions for the block. An API for the visual layer to interact with the block.
      */
     const actionsResult = await generateObject({
-      model: this.smallModel,
+      model: this.model,
+      temperature: 0,
       prompt: generateActionsForBlockPrompt(specification),
       schema: z.object({
         actions: actionSchema,

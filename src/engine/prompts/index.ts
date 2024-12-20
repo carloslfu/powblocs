@@ -1,5 +1,9 @@
 import { ActionSchema } from "../engine";
-import { pngToIcoPrompt } from "./backendLibPrompts";
+import {
+  checkingFileIsPngPrompt,
+  pngEncoderDecoderPrompt,
+  pngToIcoPrompt,
+} from "./backendLibPrompts";
 
 export function generateTitleForBlockPrompt(description: string) {
   return `Generate a short, descriptive title (3-5 words) for this code block based on this description:
@@ -110,6 +114,10 @@ export function generateBackendCodeForBlockPrompt(
 
 ${pngToIcoPrompt()}
 
+${checkingFileIsPngPrompt()}
+
+${pngEncoderDecoderPrompt()}
+
 ## Backend actions
 
 The backend should expose the following actions:
@@ -132,12 +140,6 @@ import * as cowsay from "https://esm.sh/cowsay@1.6.0";
 Pow.registerAction("main", async () => {
   let result = cowsay.say({ text: "🤠 🚀" });
 
-  // count to 100 and wait 1 second between each number
-  for (let i = 0; i < 100; i++) {
-    // perform the action
-    Pow.send("progress", { progress: i });
-  }
-
   Pow.returnValue({ result });
 });
 
@@ -146,16 +148,13 @@ Pow.registerAction("cowsay", async ({ text }: { text: string }) => {
 
   Pow.returnValue({ result });
 });
-
-Pow.registerAction("count", async ({ to }: { to: number }) => {
-  for (let i = 0; i < to; i++) {
-    Pow.send("progress", { progress: i });
-  }
-});
 </code>
 
 
-Implement the complete code. DO NOT simulate doing or add placeholder comments. You are expected to implement the full functionality.
+Implement the complete code. DO NOT add placeholder comments. You should implement the full functionality. DO NOT fake or simulate doing anything. IMPLEMENT THE CODE.
+
+BE sure to not let features half baked or variables unused.
+
 
 Use the <thinking></thinking> tag to think about the implementation before you generate it.
 
