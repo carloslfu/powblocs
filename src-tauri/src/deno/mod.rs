@@ -239,8 +239,14 @@ static TASK_STATE: Lazy<Mutex<HashMap<String, Task>>> = Lazy::new(|| Mutex::new(
 #[op2(fast)]
 fn custom_op_return_value(#[string] task_id: &str, #[string] value: &str) {
     let mut state_lock = TASK_STATE.lock().unwrap();
-    let task = state_lock.get_mut(task_id).unwrap();
-    task.return_value = value.to_string();
+    if let Some(task) = state_lock.get_mut(task_id) {
+        task.return_value = value.to_string();
+    } else {
+        println!(
+            "Warning: Attempted to set return value for non-existent task: {}",
+            task_id
+        );
+    }
 }
 
 #[op2]
