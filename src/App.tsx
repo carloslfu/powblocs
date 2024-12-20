@@ -373,7 +373,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Create/update engine when Claude key changes
     if (claudeKey) {
       const newEngine = new PowBlocksEngine({
         store: new LocalEngineStore(),
@@ -384,7 +383,6 @@ function App() {
       });
       setEngine(newEngine);
 
-      // Load blocks from store
       newEngine.store.listBlocks().then((blocks) => {
         setBlocks(blocks);
       });
@@ -496,7 +494,6 @@ function App() {
   };
 
   const handleBackendCodeChange = async (newCode: string) => {
-    console.log("newCode", newCode);
     setBackendCode(newCode);
 
     if (engine && selectedBlock) {

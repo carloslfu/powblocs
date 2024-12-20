@@ -124,13 +124,11 @@ The backend should expose the following actions:
 <actions>${JSON.stringify(actions, null, 2)}</actions>
 
 Pow is a global object that contains the PowBlocs runtime functionality, here are the methods:
-- Pow.send(eventName: string, data: Record<string, any>): sends an event to the PowBlocs runtime. Use for any output that needs streaming.
 - Pow.returnValue(result: Record<string, any>): returns the result to the PowBlocs runtime. Use it for any output that doesn't need streaming, the final result.
-- Pow.taskId: the id of the current task, it is set by the PowBlocs runtime. This is internally set and used by the PowBlocs runtime to identify the task.
 - Pow.registerAction(actionName: string, action: (data: Record<string, any>) => void): registers an action that can be called by the PowBlocs runtime. The runtime will call the actions from a UI with list of actions. These are the entry points for the user to interact with the block.
-- Pow.actionName: the name of the action that is currently being executed. This is set and internally used by the PowBlocs runtime.
-- Pow.actionData: the data of the action that is currently being executed. This is set and internally used by the PowBlocs runtime.
 - Pow.dirPath(name): returns the path to the specified user directory. User directory names are: audio, cache, config, data, data_local, desktop, document, download, executable, font, home, picture, preference, public, runtime, template, video, config_local, state.
+- Pow.send(eventName: string, data: Record<string, any>): sends an event to the PowBlocs runtime. Use for any output that needs streaming.
+- Pow.callAction(actionName: string, input: Record<string, any>): calls an action. This is used to call an action from another action. Chain actions together or reuse them.
 
 Here is an example:
 

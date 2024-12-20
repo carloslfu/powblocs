@@ -426,14 +426,16 @@ pub async fn run(
     println!("Writing code to {}", temp_code_path.display());
 
     let augmented_code = format!(
-        "globalThis.Pow.taskId = \"{task_id}\";
-globalThis.Pow.actionName = \"{action_name}\";
-globalThis.Pow.actionData = {action_data};
+        "globalThis.Pow._taskId = \"{task_id}\";
+globalThis.Pow._actionName = \"{action_name}\";
+globalThis.Pow._actionData = {action_data};
 
 {code}
 
+globalThis.Pow._evaluateActions();
+
 // default action
-if (!globalThis.Pow.actionHandled) {{
+if (!globalThis.Pow._actionHandled) {{
     throw new Error(\"No action defined for {action_name}\");
 }}"
     );

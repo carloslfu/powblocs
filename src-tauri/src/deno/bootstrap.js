@@ -8,12 +8,10 @@ function send(eventName, data) {
   ops.custom_op_send(globalThis.Pow.taskId, eventName, JSON.stringify(data));
 }
 
-function registerAction(actionName, action) {
-  if (globalThis.Pow.actionName === actionName) {
-    action(globalThis.Pow.actionData);
+const actionMap = {};
 
-    globalThis.Pow.actionHandled = true;
-  }
+function registerAction(actionName, action) {
+  actionMap[actionName] = action;
 }
 
 function sleep(ms) {
@@ -24,11 +22,27 @@ function dirPath(dirName) {
   return ops.custom_op_dir_path(dirName);
 }
 
+function callAction(actionName, input) {
+  if (actionMap[actionName]) {
+    actionMap[actionName](input);
+  }
+}
+
+function _evaluateActions() {
+  if (actionMap[globalThis.Pow.actionName]) {
+    actionMap[globalThis.Pow.actionName](globalThis.Pow.actionData);
+
+    globalThis.Pow._actionHandled = true;
+  }
+}
+
 globalThis.Pow = {
   returnValue,
   dirPath,
   send,
   registerAction,
   sleep,
-  actionHandled: false,
+  _actionHandled: false,
+  callAction,
+  _evaluateActions,
 };
