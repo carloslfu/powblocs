@@ -57,3 +57,22 @@ isPng(buffer);
 //=> true
 \`\`\``;
 }
+
+export function denoAPIsPrompt() {
+  return `## Deno APIs
+
+To use Deno APIs, you can use the \`Deno\` object. Here is an example of how to use it:
+
+\`\`\`ts
+await Deno.writeFile(outputPath, icoBuffer);
+\`\`\`
+
+The standard library is used for example like this:
+
+\`\`\`ts
+import { readAll } from "https://deno.land/std@0.184.0/streams/mod.ts";
+
+const fileStream = await Deno.open(inputPath);
+const buffer = await readAll(fileStream);
+\`\`\``;
+}

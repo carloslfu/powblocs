@@ -1,6 +1,7 @@
 import { ActionSchema } from "../engine";
 import {
   checkingFileIsPngPrompt,
+  denoAPIsPrompt,
   pngEncoderDecoderPrompt,
   pngToIcoPrompt,
 } from "./backendLibPrompts";
@@ -117,6 +118,8 @@ ${pngToIcoPrompt()}
 ${checkingFileIsPngPrompt()}
 
 ${pngEncoderDecoderPrompt()}
+
+${denoAPIsPrompt()}
 
 ## Backend actions
 
