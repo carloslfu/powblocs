@@ -357,6 +357,8 @@ function App() {
 
   const [specEditorRef, setSpecEditorRef] = useState<Editor | null>(null);
 
+  const [isGeneratingUI, setIsGeneratingUI] = useState(false);
+
   useEffect(() => {
     // Load initial Claude API key
     getClaudeAPIKey().then((key) => {
@@ -463,6 +465,24 @@ function App() {
       console.error("Failed to generate backend and actions:", error);
     } finally {
       setIsGeneratingBackendAndActions(false);
+    }
+  };
+
+  const handleGenerateUI = async () => {
+    if (!engine || !selectedBlock?.id) {
+      return;
+    }
+
+    try {
+      setIsGeneratingUI(true);
+      const block = await engine.generateUIForBlock(selectedBlock?.id);
+
+      setSelectedBlock(block);
+      setUiCode(block.uiCode);
+    } catch (error) {
+      console.error("Failed to generate UI code:", error);
+    } finally {
+      setIsGeneratingUI(false);
     }
   };
 
@@ -731,6 +751,21 @@ function App() {
                   </span>
                 ) : (
                   "Generate Backend and Actions"
+                )}
+              </Button>
+
+              <Button
+                onClick={handleGenerateUI}
+                className="mt-2 ml-2"
+                disabled={!engine || !description || isGeneratingUI}
+              >
+                {isGeneratingUI ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <FaSpinner className="animate-spin" />
+                    Generating...
+                  </span>
+                ) : (
+                  "Generate UI"
                 )}
               </Button>
             </div>

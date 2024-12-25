@@ -202,7 +202,7 @@ export class PowBlocksEngine {
     };
   }
 
-  async generateUIForBlock(blockId: string) {
+  async generateUIForBlock(blockId: string): Promise<Block> {
     const block = await this.store.getBlock(blockId);
 
     if (!block) {
@@ -227,6 +227,13 @@ export class PowBlocksEngine {
       ),
     });
 
-    return uiCodeResponse.text;
+    await this.store.updateBlock(blockId, {
+      uiCode: uiCodeResponse.text,
+    });
+
+    return {
+      ...block,
+      uiCode: uiCodeResponse.text,
+    };
   }
 }
