@@ -317,11 +317,17 @@ function ActionInputs({
 }
 
 const UIPreview = React.memo(function UIPreview({ code }: { code: string }) {
+  console.log("UIPreview", code);
+
+  const cachedScope = useMemo(() => {
+    return {
+      Pow: PowBlocsScope,
+    };
+  }, []);
+
   const { element, error } = useRunner({
     code: processUICode(code),
-    scope: {
-      Pow: PowBlocsScope,
-    },
+    scope: cachedScope,
   });
 
   const errorDisplay = useMemo(() => {
