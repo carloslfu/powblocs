@@ -185,19 +185,19 @@ There are global hooks and functions that you can use to listen to events and st
 })
 - Pow.runAction(actionName, input)
 
+React is already imported. Use hooks from it like \`React.useState\`, \`React.useCallback\`, etc.
+
 Output UI like it is going to be rendered in react-runner. Output it in the following format:
 <uiCode>
-import { useState } from 'react';
-
 function App() {
-  const [text, setText] = useState('');
-  const [countTo, setCountTo] = useState(10);
+  const [text, setText] = React.useState('');
+  const [countTo, setCountTo] = React.useState(10);
 
   // Get result from cowsay action
   const result = Pow.useActionResult('cowsay');
 
   // Track progress from count action
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = React.useState(0);
   Pow.useEvent('progress', (data) => {
     setProgress(data.progress);
   });

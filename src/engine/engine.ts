@@ -243,22 +243,18 @@ export class PowBlocksEngine {
 
     return {
       ...block,
-      uiCode: uiCodeResponse.text,
+      uiCode,
     };
   }
 }
 
 function defaultUIForBlock(title: string, message: string) {
-  return `import { useState } from 'react';
-
-function ${title}() {
+  return `export default function App() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">${title}</h1>
       <p className="text-gray-600">${message}</p>
     </div>
   );
-}
-
-export default App;`;
+}`;
 }

@@ -1,4 +1,4 @@
-import {
+import React, {
   useEffect,
   useRef,
   useState,
@@ -18,6 +18,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Runner, useRunner } from "react-runner";
 
 import { getClaudeAPIKey } from "./localStore";
 import { ActionSchema, PowBlocksEngine } from "./engine/engine";
@@ -31,6 +33,7 @@ import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
 import { ClaudeAPIKey } from "./components/ClaudeAPIKey";
+import { PowBlocsScope } from "./engine/PowBlocsScope";
 
 /**
  * Delay before showing spinner
@@ -313,6 +316,33 @@ function ActionInputs({
   );
 }
 
+const UIPreview = React.memo(function UIPreview({ code }: { code: string }) {
+  const { element, error } = useRunner({
+    code: processUICode(code),
+    scope: {
+      Pow: PowBlocsScope,
+    },
+  });
+
+  const errorDisplay = useMemo(() => {
+    if (!error) return null;
+    return (
+      <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+        <h4 className="text-sm font-medium text-red-800 mb-2">Error</h4>
+        <pre className="text-sm text-red-600 whitespace-pre-wrap font-mono">
+          {error.toString()}
+        </pre>
+      </div>
+    );
+  }, [error]);
+
+  if (error) {
+    return errorDisplay;
+  }
+
+  return <div className="bg-white p-4 rounded-lg">{element}</div>;
+});
+
 function App() {
   const [backendCode, setBackendCode] = useState("");
   const [uiCode, setUiCode] = useState("");
@@ -359,6 +389,8 @@ function App() {
 
   const [isGeneratingUI, setIsGeneratingUI] = useState(false);
 
+  const [activeTab, setActiveTab] = useState<"spec" | "preview">("spec");
+
   useEffect(() => {
     // Load initial Claude API key
     getClaudeAPIKey().then((key) => {
@@ -369,22 +401,22 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (claudeKey) {
-      const newEngine = new PowBlocksEngine({
-        store: new LocalEngineStore(),
-        apiKeys: {
-          ANTHROPIC_API_KEY: claudeKey,
-          OPENAI_API_KEY: "",
-        },
-      });
-      setEngine(newEngine);
-
-      newEngine.store.listBlocks().then((blocks) => {
-        setBlocks(blocks);
-      });
-    } else {
+    if (!claudeKey) {
       setEngine(null);
+      return;
     }
+
+    const newEngine = new PowBlocksEngine({
+      store: new LocalEngineStore(),
+      apiKeys: {
+        ANTHROPIC_API_KEY: claudeKey,
+        OPENAI_API_KEY: "",
+      },
+    });
+    setEngine(newEngine);
+
+    // Load blocks only once when engine is initialized
+    newEngine.store.listBlocks().then(setBlocks);
   }, [claudeKey]);
 
   const handleRunCode = async (actionName: string = "main") => {
@@ -486,7 +518,7 @@ function App() {
     }
   };
 
-  const handleSelectBlock = (block: Block) => {
+  const handleSelectBlock = useCallback((block: Block) => {
     setSelectedBlock(block);
     setDescription(block.description);
     setBackendCode(block.backendCode);
@@ -498,14 +530,18 @@ function App() {
         return acc;
       }, {} as Record<string, any>)
     );
-    const htmlContent = block.description;
+  }, []);
+
+  useEffect(() => {
+    if (!selectedBlock) return;
+
     if (editorRef.current) {
-      editorRef.current.commands.setContent(htmlContent);
+      editorRef.current.commands.setContent(selectedBlock.description);
     }
     if (specEditorRef) {
-      specEditorRef.commands.setContent(block.specification);
+      specEditorRef.commands.setContent(selectedBlock.specification);
     }
-  };
+  }, [selectedBlock]);
 
   const handleBackendCodeChange = async (newCode: string) => {
     setBackendCode(newCode);
@@ -685,138 +721,166 @@ function App() {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="mb-4">
-              <TextEditor
-                onChange={handleDescriptionChange}
-                onEditorReady={(editor) => {
-                  editorRef.current = editor;
-                }}
-                initialContent={selectedBlock?.description}
-                placeholder="Describe your block..."
-              />
-              <div className="flex gap-2 mt-2">
-                <Button
-                  onClick={handleGenerateSpec}
-                  className="w-40 whitespace-normal h-auto py-2"
-                  disabled={!engine || !description || isGeneratingSpec}
-                >
-                  {isGeneratingSpec ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <FaSpinner className="animate-spin" />
-                      Generating...
-                    </span>
-                  ) : (
-                    "Gen Spec"
-                  )}
-                </Button>
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as "spec" | "preview")}
+              className="mb-4"
+            >
+              <TabsList>
+                <TabsTrigger value="spec">Specification & Backend</TabsTrigger>
+                <TabsTrigger value="preview">UI Preview</TabsTrigger>
+              </TabsList>
 
-                <Button
-                  onClick={handleGenerateBackendAndActions}
-                  className="w-40 whitespace-normal h-auto py-2"
-                  disabled={
-                    !engine ||
-                    !description ||
-                    !selectedBlock?.specification ||
-                    isGeneratingBackendAndActions
-                  }
-                >
-                  {isGeneratingBackendAndActions ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <FaSpinner className="animate-spin" />
-                      Generating...
-                    </span>
-                  ) : (
-                    "Gen Actions"
-                  )}
-                </Button>
+              <TabsContent value="spec">
+                <div className="mb-4">
+                  <TextEditor
+                    onChange={handleDescriptionChange}
+                    onEditorReady={(editor) => {
+                      editorRef.current = editor;
+                    }}
+                    initialContent={selectedBlock?.description}
+                    placeholder="Describe your block..."
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      onClick={handleGenerateSpec}
+                      className="w-40 whitespace-normal h-auto py-2"
+                      disabled={!engine || !description || isGeneratingSpec}
+                    >
+                      {isGeneratingSpec ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <FaSpinner className="animate-spin" />
+                          Generating...
+                        </span>
+                      ) : (
+                        "Gen Spec"
+                      )}
+                    </Button>
 
-                <Button
-                  onClick={handleGenerateUI}
-                  className="w-40 whitespace-normal h-auto py-2"
-                  disabled={
-                    !engine ||
-                    !description ||
-                    !selectedBlock?.specification ||
-                    !selectedBlock?.backendCode ||
-                    !selectedBlock?.actions?.length ||
-                    isGeneratingUI
-                  }
-                >
-                  {isGeneratingUI ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <FaSpinner className="animate-spin" />
-                      Generating...
-                    </span>
-                  ) : (
-                    "Gen UI"
-                  )}
-                </Button>
-              </div>
+                    <Button
+                      onClick={handleGenerateBackendAndActions}
+                      className="w-40 whitespace-normal h-auto py-2"
+                      disabled={
+                        !engine ||
+                        !description ||
+                        !selectedBlock?.specification ||
+                        isGeneratingBackendAndActions
+                      }
+                    >
+                      {isGeneratingBackendAndActions ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <FaSpinner className="animate-spin" />
+                          Generating...
+                        </span>
+                      ) : (
+                        "Gen Actions"
+                      )}
+                    </Button>
 
-              <div className="mt-4">
-                <Collapsible defaultOpen>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium">Specification</h3>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="hover:bg-transparent p-0 data-[state=open]:rotate-90 transition-transform duration-200"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                        <span className="sr-only">Toggle specification</span>
-                      </Button>
-                    </CollapsibleTrigger>
+                    <Button
+                      onClick={handleGenerateUI}
+                      className="w-40 whitespace-normal h-auto py-2"
+                      disabled={
+                        !engine ||
+                        !description ||
+                        !selectedBlock?.specification ||
+                        !selectedBlock?.backendCode ||
+                        !selectedBlock?.actions?.length ||
+                        isGeneratingUI
+                      }
+                    >
+                      {isGeneratingUI ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <FaSpinner className="animate-spin" />
+                          Generating...
+                        </span>
+                      ) : (
+                        "Gen UI"
+                      )}
+                    </Button>
                   </div>
-                  <CollapsibleContent className="mt-2">
-                    <TextEditor
-                      onChange={handleSpecificationChange}
-                      onEditorReady={(editor) => {
-                        setSpecEditorRef(editor);
-                      }}
-                      initialContent={selectedBlock?.specification}
-                      placeholder="Describe the implementation details..."
+
+                  <div className="mt-4">
+                    <Collapsible defaultOpen>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-medium">Specification</h3>
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-transparent p-0 data-[state=open]:rotate-90 transition-transform duration-200"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                            <span className="sr-only">
+                              Toggle specification
+                            </span>
+                          </Button>
+                        </CollapsibleTrigger>
+                      </div>
+                      <CollapsibleContent className="mt-2">
+                        <TextEditor
+                          onChange={handleSpecificationChange}
+                          onEditorReady={(editor) => {
+                            setSpecEditorRef(editor);
+                          }}
+                          initialContent={selectedBlock?.specification}
+                          placeholder="Describe the implementation details..."
+                        />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </div>
+
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium mb-2">Actions</h3>
+                    <ActionInputs
+                      actions={actions}
+                      values={actionValues}
+                      onChange={(values) => setActionValues(values)}
+                      onRun={handleRunCode}
                     />
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
-            </div>
+                  </div>
 
-            {actions.length > 0 && (
-              <div className="mt-4 mb-4">
-                <h3 className="text-sm font-medium mb-2">Actions</h3>
-                <ActionInputs
-                  actions={actions}
-                  values={actionValues}
-                  onChange={(values) => setActionValues(values)}
-                  onRun={handleRunCode}
-                />
-              </div>
-            )}
+                  <div className="mt-4 overflow-auto">
+                    <h3 className="text-sm font-medium mb-2">Backend Code</h3>
+                    <div className="overflow-auto">
+                      <CodeMirror
+                        value={backendCode}
+                        height="200px"
+                        extensions={[
+                          javascript({ jsx: true, typescript: true }),
+                        ]}
+                        onChange={handleBackendCodeChange}
+                      />
+                    </div>
+                  </div>
 
-            <div className="mt-4 overflow-auto">
-              <h3 className="text-sm font-medium mb-2">Backend Code</h3>
-              <div className="overflow-auto">
-                <CodeMirror
-                  value={backendCode}
-                  height="200px"
-                  extensions={[javascript({ jsx: true, typescript: true })]}
-                  onChange={handleBackendCodeChange}
-                />
-              </div>
-            </div>
+                  <div className="mt-4 overflow-auto">
+                    <h3 className="text-sm font-medium mb-2">UI Code</h3>
+                    <div className="overflow-auto">
+                      <CodeMirror
+                        value={uiCode}
+                        height="200px"
+                        extensions={[
+                          javascript({ jsx: true, typescript: true }),
+                        ]}
+                        onChange={handleUiCodeChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
 
-            <div className="mt-4 overflow-auto">
-              <h3 className="text-sm font-medium mb-2">UI Code</h3>
-              <div className="overflow-auto">
-                <CodeMirror
-                  value={uiCode}
-                  height="200px"
-                  extensions={[javascript({ jsx: true, typescript: true })]}
-                  onChange={handleUiCodeChange}
-                />
-              </div>
-            </div>
+              <TabsContent value="preview">
+                <div className="border rounded-lg p-4">
+                  <h3 className="text-sm font-medium mb-4">UI Preview</h3>
+                  {uiCode ? (
+                    <UIPreview code={uiCode} />
+                  ) : (
+                    <EmptyState message="Generate UI code to see the preview" />
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
@@ -836,3 +900,7 @@ function App() {
 }
 
 export default App;
+
+function processUICode(code: string) {
+  return code;
+}
