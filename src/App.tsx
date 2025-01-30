@@ -694,20 +694,22 @@ function App() {
                 initialContent={selectedBlock?.description}
                 placeholder="Describe your block..."
               />
-              <Button
-                onClick={handleGenerateSpec}
-                className="mt-2"
-                disabled={!engine || !description || isGeneratingSpec}
-              >
-                {isGeneratingSpec ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <FaSpinner className="animate-spin" />
-                    Generating...
-                  </span>
-                ) : (
-                  "Generate Specification"
-                )}
-              </Button>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  onClick={handleGenerateSpec}
+                  className="w-40 whitespace-normal h-auto py-2"
+                  disabled={!engine || !description || isGeneratingSpec}
+                >
+                  {isGeneratingSpec ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <FaSpinner className="animate-spin" />
+                      Generating...
+                    </span>
+                  ) : (
+                    "Gen Spec"
+                  )}
+                </Button>
+              </div>
 
               <div className="mt-4">
                 <Collapsible defaultOpen>
@@ -737,37 +739,49 @@ function App() {
                 </Collapsible>
               </div>
 
-              <Button
-                onClick={handleGenerateBackendAndActions}
-                className="mt-2"
-                disabled={
-                  !engine || !description || isGeneratingBackendAndActions
-                }
-              >
-                {isGeneratingBackendAndActions ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <FaSpinner className="animate-spin" />
-                    Generating...
-                  </span>
-                ) : (
-                  "Generate Backend and Actions"
-                )}
-              </Button>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  onClick={handleGenerateBackendAndActions}
+                  className="w-40 whitespace-normal h-auto py-2"
+                  disabled={
+                    !engine ||
+                    !description ||
+                    !selectedBlock?.specification ||
+                    isGeneratingBackendAndActions
+                  }
+                >
+                  {isGeneratingBackendAndActions ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <FaSpinner className="animate-spin" />
+                      Generating...
+                    </span>
+                  ) : (
+                    "Gen Actions"
+                  )}
+                </Button>
 
-              <Button
-                onClick={handleGenerateUI}
-                className="mt-2 ml-2"
-                disabled={!engine || !description || isGeneratingUI}
-              >
-                {isGeneratingUI ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <FaSpinner className="animate-spin" />
-                    Generating...
-                  </span>
-                ) : (
-                  "Generate UI"
-                )}
-              </Button>
+                <Button
+                  onClick={handleGenerateUI}
+                  className="w-40 whitespace-normal h-auto py-2"
+                  disabled={
+                    !engine ||
+                    !description ||
+                    !selectedBlock?.specification ||
+                    !selectedBlock?.backendCode ||
+                    !selectedBlock?.actions?.length ||
+                    isGeneratingUI
+                  }
+                >
+                  {isGeneratingUI ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <FaSpinner className="animate-spin" />
+                      Generating...
+                    </span>
+                  ) : (
+                    "Gen UI"
+                  )}
+                </Button>
+              </div>
             </div>
 
             {actions.length > 0 && (
