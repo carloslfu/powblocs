@@ -1,8 +1,12 @@
 import { nanoid } from "@/lib/nanoid";
 import { Block, CodeStore } from "./model";
 import { load } from "@tauri-apps/plugin-store";
+import { appDataDir } from "@tauri-apps/api/path";
 
 const store = await load("engine.json", { autoSave: false });
+
+// log Tauri's app_data_dir
+console.log(await appDataDir());
 
 export class LocalEngineStore implements CodeStore {
   async listBlocks(): Promise<Block[]> {

@@ -709,37 +709,7 @@ function App() {
                     "Gen Spec"
                   )}
                 </Button>
-              </div>
 
-              <div className="mt-4">
-                <Collapsible defaultOpen>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium">Specification</h3>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="hover:bg-transparent p-0 data-[state=open]:rotate-90 transition-transform duration-200"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                        <span className="sr-only">Toggle specification</span>
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
-                  <CollapsibleContent className="mt-2">
-                    <TextEditor
-                      onChange={handleSpecificationChange}
-                      onEditorReady={(editor) => {
-                        setSpecEditorRef(editor);
-                      }}
-                      initialContent={selectedBlock?.specification}
-                      placeholder="Describe the implementation details..."
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
-
-              <div className="flex gap-2 mt-2">
                 <Button
                   onClick={handleGenerateBackendAndActions}
                   className="w-40 whitespace-normal h-auto py-2"
@@ -781,6 +751,34 @@ function App() {
                     "Gen UI"
                   )}
                 </Button>
+              </div>
+
+              <div className="mt-4">
+                <Collapsible defaultOpen>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium">Specification</h3>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="hover:bg-transparent p-0 data-[state=open]:rotate-90 transition-transform duration-200"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                        <span className="sr-only">Toggle specification</span>
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                  <CollapsibleContent className="mt-2">
+                    <TextEditor
+                      onChange={handleSpecificationChange}
+                      onEditorReady={(editor) => {
+                        setSpecEditorRef(editor);
+                      }}
+                      initialContent={selectedBlock?.specification}
+                      placeholder="Describe the implementation details..."
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </div>
 

@@ -227,8 +227,18 @@ export class PowBlocksEngine {
       ),
     });
 
+    // extract <uiCode> tags
+    let uiCode = uiCodeResponse.text.match(/<uiCode>([\s\S]*?)<\/uiCode>/)?.[1];
+
+    if (!uiCode) {
+      uiCode = defaultUIForBlock(
+        block.title || "Untitled",
+        "Error: No UI code generated"
+      );
+    }
+
     await this.store.updateBlock(blockId, {
-      uiCode: uiCodeResponse.text,
+      uiCode,
     });
 
     return {
@@ -236,4 +246,19 @@ export class PowBlocksEngine {
       uiCode: uiCodeResponse.text,
     };
   }
+}
+
+function defaultUIForBlock(title: string, message: string) {
+  return `import { useState } from 'react';
+
+function ${title}() {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-4">${title}</h1>
+      <p className="text-gray-600">${message}</p>
+    </div>
+  );
+}
+
+export default App;`;
 }
