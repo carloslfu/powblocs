@@ -878,7 +878,6 @@ function App() {
 
               <TabsContent value="preview">
                 <div className="border rounded-lg p-4">
-                  <h3 className="text-sm font-medium mb-4">UI Preview</h3>
                   {uiCode ? (
                     <UIPreview code={uiCode} />
                   ) : (
