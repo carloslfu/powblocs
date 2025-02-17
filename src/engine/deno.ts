@@ -208,9 +208,14 @@ export async function replayTask(taskId: string) {
     state: "running",
   });
 
+  // TODO: debug this id, undefined actionName, undefined actionData, likely the store is not updated
+  console.log("-- replaying task", task.id, task.actionName, task.actionData);
+
   try {
     await invoke("run_task", {
       taskId: task.id,
+      actionName: task.actionName,
+      actionData: JSON.stringify(task.actionData),
       code: task.code,
     });
   } catch (error) {

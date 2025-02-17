@@ -13,7 +13,15 @@
     "windows": [
       {
         "title": "PowBlocs",
-        "maximized": true
+        "maximized": true,
+        "shortcuts": [
+          "Alt+Enter",
+          "Alt+Down",
+          "Alt+F4",
+          "CommandOrControl+=",
+          "CommandOrControl+-",
+          "CommandOrControl+0"
+        ]
       }
     ],
     "security": {
